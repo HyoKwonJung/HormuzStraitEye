@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hormuz Military Dashboard (Prototype)</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    :root {
+      --panel: #121a2a;
+      --muted: #8fa1c7;
+      --text: #e8eefc;
+      --danger: #ff4d4f;
+      --warn: #f7b955;
+      --border: #25314f;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(160deg, #0b1220 0%, #0e1527 50%, #0b1220 100%);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      background: rgba(18, 26, 42, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .title { font-size: 1.35rem; font-weight: 700; margin: 0; }
+    .sub { color: var(--muted); margin: 4px 0 0; font-size: 0.92rem; }
+
+    .badges { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .badge {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: #0d1424;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      background: #0d1424;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .metric h3 { margin: 0; font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+    .metric p { margin: 8px 0 0; font-size: 1.6rem; font-weight: 700; }
+    .metric small { color: var(--muted); }
+
+    .high { color: var(--warn); }
+    .critical { color: var(--danger); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+    }
+
+    .map-shell {
+      position: relative;
+      min-height: 440px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #0a1120;
+    }
+
+    #map {
+      width: 100%;
+      height: 440px;
+    }
+
+    .legend {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      background: rgba(8, 12, 21, 0.88);
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 0.76rem;
+      color: var(--muted);
+      z-index: 500;
+    }
+
+    .legend div { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    .list { display: grid; gap: 8px; }
+
+    .item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: #0d1424;
+    }
+
+    .item strong { font-size: 0.9rem; }
+    .item p { margin: 5px 0 0; color: var(--muted); font-size: 0.84rem; }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .bars { display: grid; gap: 8px; }
+
+    .bar {
+      display: grid;
+      grid-template-columns: 150px 1fr 36px;
+      gap: 8px;
+      align-items: center;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .track {
+      background: #0a1120;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      height: 10px;
+    }
+
+    .fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #f7b955, #ff7a59); }
+
+    .leaflet-container {
+      background: #0b1220;
+      color: #0b1220;
+    }
+
+    @media (max-width: 960px) {
+      .hero { grid-template-columns: repeat(2, 1fr); }
+      .grid, .split { grid-template-columns: 1fr; }
+      .bar { grid-template-columns: 120px 1fr 30px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card header">
+      <div>
+        <h1 class="title">Hormuz Military Dashboard <span style="font-size:0.85rem;color:var(--muted);font-weight:500">Prototype</span></h1>
+        <p class="sub">Not just traffic. Operational risk intelligence for Hormuz.</p>
+      </div>
+      <div class="badges">
+        <span class="badge">Last Updated: 2026-03-15 10:35 UTC</span>
+        <span class="badge">Time Window: 24h</span>
+        <span class="badge">Confidence: Medium+</span>
+      </div>
+    </section>
+
+    <section class="hero">
+      <article class="metric card">
+        <h3>Computed Risk Score</h3>
+        <p class="high">74 / HIGH</p>
+        <small>0-100 weighted index</small>
+      </article>
+      <article class="metric card">
+        <h3>Official Threat Level</h3>
+        <p class="critical">CRITICAL</p>
+        <small>JMIC advisory baseline</small>
+      </article>
+      <article class="metric card">
+        <h3>Incidents (24h)</h3>
+        <p>6</p>
+        <small>Confirmed + probable events</small>
+      </article>
+      <article class="metric card">
+        <h3>Warnings in Force</h3>
+        <p>9</p>
+        <small>NAVAREA / UKMTO / MARAD</small>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2 style="margin-top:0">Live Operational Map</h2>
+        <p class="sub">This map now uses real map tiles (Leaflet + OpenStreetMap) with sample incident overlays.</p>
+        <div class="map-shell" aria-label="Hormuz operational map">
+          <div id="map"></div>
+          <div class="legend">
+            <strong>Legend</strong>
+            <div><span class="dot" style="background:#ff4d4f"></span>Confirmed attack</div>
+            <div><span class="dot" style="background:#f7b955"></span>High-risk warning</div>
+            <div><span class="dot" style="background:#55a4f7"></span>Official advisory</div>
+            <div><span class="dot" style="background:#ba68ff"></span>Air activity signal</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2 style="margin-top:0">Timeline (24h)</h2>
+        <div class="list">
+          <div class="item"><strong>10:35 UTC — Security incident causing fire</strong><p>Near northbound transit lane · Source: UKMTO · Confidence: 0.88</p></div>
+          <div class="item"><strong>08:10 UTC — NAVAREA IX warning issued</strong><p>Chokepoint proximity alert · Source: NAVAREA IX · Confidence: 0.93</p></div>
+          <div class="item"><strong>05:50 UTC — JMIC advisory update posted</strong><p>Regional threat remains CRITICAL · Source: JMIC · Confidence: 0.99</p></div>
+          <div class="item"><strong>01:20 UTC — Commercial vessel strike reported</strong><p>Projectile impact suspected · Source: MARAD + media · Confidence: 0.81</p></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="split">
+      <article class="card">
+        <h2 style="margin-top:0">Threat Breakdown</h2>
+        <div class="bars">
+          <div class="bar"><span>UAV / Missile</span><div class="track"><div class="fill" style="width:78%"></div></div><span>78</span></div>
+          <div class="bar"><span>Boarding / Seizure</span><div class="track"><div class="fill" style="width:64%"></div></div><span>64</span></div>
+          <div class="bar"><span>Mine-related</span><div class="track"><div class="fill" style="width:52%"></div></div><span>52</span></div>
+          <div class="bar"><span>Navigation Warnings</span><div class="track"><div class="fill" style="width:69%"></div></div><span>69</span></div>
+          <div class="bar"><span>Signal Interference</span><div class="track"><div class="fill" style="width:41%"></div></div><span>41</span></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2 style="margin-top:0">Why Risk Is Up</h2>
+        <ul style="margin:0; padding-left:18px; color:var(--muted); line-height:1.7">
+          <li>Three high-severity events in the last 24 hours increased the Incident Severity component.</li>
+          <li>Two new NAVAREA warnings raised the Official Warning component.</li>
+          <li>The official regional maritime threat level remains CRITICAL.</li>
+          <li>Recent events moved closer to the transit lanes, worsening the Proximity component.</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script>
+    const map = L.map('map', {
+      zoomControl: true,
+      attributionControl: true
+    }).setView([26.6, 56.2], 7);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 12,
+      minZoom: 4,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const lanePath = [
+      [26.1, 56.9],
+      [26.4, 56.5],
+      [26.8, 56.1],
+      [27.1, 55.7]
+    ];
+
+    L.polyline(lanePath, {
+      color: '#9dc1ff',
+      weight: 3,
+      dashArray: '6 8',
+      opacity: 0.8
+    }).addTo(map).bindPopup('Major transit lane (sample overlay)');
+
+    L.circle([26.62, 56.2], {
+      radius: 28000,
+      color: '#ff4d4f',
+      fillColor: '#ff4d4f',
+      fillOpacity: 0.18,
+      weight: 1
+    }).addTo(map).bindPopup('High-risk concentration zone');
+
+    const points = [
+      { lat: 26.55, lon: 56.16, color: '#ff4d4f', label: 'Confirmed attack' },
+      { lat: 26.73, lon: 56.35, color: '#f7b955', label: 'High-risk warning' },
+      { lat: 26.89, lon: 55.96, color: '#55a4f7', label: 'Official advisory' },
+      { lat: 26.46, lon: 56.55, color: '#ba68ff', label: 'Air activity signal' }
+    ];
+
+    points.forEach((p) => {
+      L.circleMarker([p.lat, p.lon], {
+        radius: 8,
+        color: '#ffffff',
+        weight: 1,
+        fillColor: p.color,
+        fillOpacity: 0.95
+      }).addTo(map).bindPopup(p.label);
+    });
+  </script>
+</body>
+</html>

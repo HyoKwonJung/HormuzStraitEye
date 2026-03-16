@@ -1,0 +1,13 @@
+name = "hormuzstraiteye"
+main = "index.js"
+compatibility_date = "2026-03-16"
+
+[triggers]
+crons = ["*/30 * * * *"]
+
+[[kv_namespaces]]
+binding = "DASHBOARD_SNAPSHOTS"
+id = "c0db9c99661444df8fcd3068b18448d6"
+
+[vars]
+CORS_ORIGIN = "https://hyokwonjung.github.io"

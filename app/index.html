@@ -69,6 +69,34 @@
     }
     .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
     
+    /* AI Briefing Panel Styles (추가됨) */
+    .ai-briefing-container {
+      background: var(--deep-bg);
+      border: 1px solid rgba(85, 164, 247, 0.5);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 15px rgba(85, 164, 247, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ai-header {
+      color: #55a4f7;
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ai-content {
+      color: var(--text);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
     /* Intelligence List Style */
     .intel-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
     .intel-card { 
@@ -134,6 +162,16 @@
     <section class="grid">
       <article class="card">
         <h2 style="margin:0 0 12px 0; font-size:1.1rem">Live Operational Picture</h2>
+        
+        <div class="ai-briefing-container">
+          <div class="ai-header">
+            <span>🤖</span> AI Briefing
+          </div>
+          <div id="ai-summary-text" class="ai-content">
+            Analyzing real-time OSINT data to generate situational briefing...
+          </div>
+        </div>
+
         <div class="map-shell">
           <div id="map"></div>
           <div class="legend">
@@ -290,9 +328,14 @@
 
     async function loadDashboardData() {
       try {
-        const [evRes, riskRes, intelRes] = await Promise.all([
-          fetch(`${API_BASE}/api/events`), fetch(`${API_BASE}/api/risk`), fetch(`${API_BASE}/api/intel`)
+        // AI 요약 API도 함께 호출하도록 Promise 배열에 추가
+        const [evRes, riskRes, intelRes, aiRes] = await Promise.all([
+          fetch(`${API_BASE}/api/events`), 
+          fetch(`${API_BASE}/api/risk`), 
+          fetch(`${API_BASE}/api/intel`),
+          fetch(`${API_BASE}/api/summary`) // 추가됨!
         ]);
+        
         const events = await evRes.json();
         const risk = await riskRes.json();
         const intel = await intelRes.json();
@@ -301,6 +344,14 @@
         renderIntelligence(intel);
         renderTimeline(events);
         renderMarkers(events);
+        
+        // AI 데이터 처리 및 화면 출력
+        if (aiRes.ok) {
+          const aiData = await aiRes.json();
+          document.getElementById('ai-summary-text').innerText = aiData.summary || "No briefing available at this moment.";
+        } else {
+          document.getElementById('ai-summary-text').innerText = "Failed to load AI briefing network.";
+        }
         
         // Render Components
         const compList = document.getElementById('components-list');

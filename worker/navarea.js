@@ -1,11 +1,12 @@
 import { cleanHtml, fetchText, getErrorString, isoNow, parseDateTime } from "./utils.js";
 
-const CENTCOM_FEED = "https://www.centcom.mil/MEDIA/PRESS-RELEASES/RSS/";
+// 미 해군/해병대 전문 군사 매체 (USNI News)
+const MILITARY_FEED = "https://news.usni.org/feed/";
 
 export async function collectNavarea() {
   const nowIso = isoNow();
   try {
-    const xml = await fetchText(CENTCOM_FEED);
+    const xml = await fetchText(MILITARY_FEED);
     const events = [];
     const items = xml.split("<item>").slice(1);
 
@@ -16,33 +17,32 @@ export async function collectNavarea() {
       
       const lowerTitle = title.toLowerCase();
       
-      // 🎯 작전 키워드 확장: 병력(force), 사령부(command), 훈련(exercise), 차단(intercept), 지원(assist) 추가
-      if (!/(sea|gulf|hormuz|iran|houthi|missile|uav|drone|strike|vessel|ship|navy|destroy|engage|force|command|exercise|intercept|assist|rescue)/.test(lowerTitle)) continue;
+      if (!/(hormuz|iran|marine|meu|arg|carrier|deploy|amphibious|5th fleet|centcom|warship|strike group|force)/.test(lowerTitle)) continue;
 
       let type = "warning";
-      if (/(strike|destroy|engage|defeat|intercept)/.test(lowerTitle)) type = "attack";
-      if (/(uav|drone|missile)/.test(lowerTitle)) type = "air";
-      if (/(exercise|assist|rescue|visit)/.test(lowerTitle)) type = "advisory";
+      if (/(deploy|marine|carrier|force)/.test(lowerTitle)) type = "advisory";
+      if (/(strike|attack|fire|intercept)/.test(lowerTitle)) type = "attack";
 
-      const lat = 24.0 + (Math.random() * 3);
-      const lon = 54.0 + (Math.random() * 4);
+      // 해군/해병대 전개 예상 해역 (오만 만 ~ 호르무즈 해협 입구)
+      const lat = 24.0 + (Math.random() * 2);
+      const lon = 56.5 + (Math.random() * 2);
 
       events.push({
         lat: Number(lat.toFixed(2)),
         lon: Number(lon.toFixed(2)),
         type,
         label: cleanHtml(title).slice(0, 120),
-        source: "US CENTCOM",
+        source: "Naval OSINT",
         source_url: link.trim(),
-        confidence: 0.99,
+        confidence: 0.98,
         time: parseDateTime(pubDate, nowIso)
       });
     }
 
-    if (events.length === 0) throw new Error("No recent maritime combat updates from CENTCOM.");
-    return { events: events.slice(0, 5), status: { source: "US CENTCOM", ok: true, used_fallback: false, error: null, checked_at: nowIso, count: events.length } };
+    if (events.length === 0) throw new Error("No strategic military deployments found.");
+    return { events: events.slice(0, 5), status: { source: "Naval OSINT", ok: true, used_fallback: false, error: null, checked_at: nowIso, count: events.length } };
 
   } catch (err) {
-    return { events: [], status: { source: "US CENTCOM", ok: false, used_fallback: false, error: getErrorString(err), checked_at: nowIso, count: 0 } };
+    return { events: [], status: { source: "Naval OSINT", ok: false, used_fallback: false, error: getErrorString(err), checked_at: nowIso, count: 0 } };
   }
 }

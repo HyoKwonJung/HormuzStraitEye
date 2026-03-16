@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hyokwonjung.github.io/HormuzStraitEye/sitemap.xml

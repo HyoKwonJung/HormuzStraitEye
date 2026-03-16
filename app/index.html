@@ -3,16 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hormuz Security Dashboard</title>
-  <meta name="description" content="Public OSINT dashboard for monitoring maritime security risk in and around the Strait of Hormuz." />
+  <meta name="description" content="Public OSINT dashboard for monitoring operational risk in and around the Strait of Hormuz." />
+  <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://hyokwonjung.github.io/HormuzStraitEye/app/" />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="Hormuz Security Dashboard" />
+
+  <meta property="og:title" content="Hormuz Military Dashboard" />
   <meta property="og:description" content="Operational risk intelligence for the Strait of Hormuz." />
   <meta property="og:url" content="https://hyokwonjung.github.io/HormuzStraitEye/app/" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Hormuz Security Dashboard" />
+  <meta property="og:type" content="website"
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Hormuz Military Dashboard" />
   <meta name="twitter:description" content="Operational risk intelligence for the Strait of Hormuz." />
+  <title>Hormuz Military Dashboard</title>
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -127,8 +129,8 @@
   <main class="wrap">
     <section class="card header">
       <div>
-        <h1 class="title">Hormuz Security Dashboard</h1>
-        <p class="sub">Public OSINT dashboard for monitoring maritime security risk in the Strait of Hormuz.</p>
+        <h1 class="title">Hormuz Military Dashboard</h1>
+        <p class="sub">Not just traffic. Operational risk intelligence for Hormuz.</p>
         <p class="sub" id="risk-summary-line">--</p>
       </div>
       <div class="badges">
@@ -452,6 +454,22 @@
       renderWhy(riskData, filtered);
     }
 
+    async function fetchLegacySnapshot() {
+      const [legacyEventsRes, legacyRiskRes] = await Promise.all([
+      fetch('../data/events.json', { cache: 'no-store' }),
+      fetch('../data/risk.json', { cache: 'no-store' })
+     ]);
+
+      if (!legacyEventsRes.ok || !legacyRiskRes.ok) {
+        throw new Error('legacy fetch failed');
+      }
+
+      return {
+        events: await legacyEventsRes.json(),
+        risk: await legacyRiskRes.json()
+      };
+    }
+    
     function useCachedData() {
       try {
         const events = JSON.parse(localStorage.getItem('hormuz_events') || '[]');
@@ -470,51 +488,48 @@
       return false;
     }
 
-    async function fetchLegacySnapshot() {
-      const [legacyEventsRes, legacyRiskRes] = await Promise.all([
-        fetch('../data/events.json', { cache: 'no-store' }),
-        fetch('../data/risk.json', { cache: 'no-store' })
-      ]);
-      if (!legacyEventsRes.ok || !legacyRiskRes.ok) throw new Error('legacy fetch failed');
-      return {
-        events: await legacyEventsRes.json(),
-        risk: await legacyRiskRes.json(),
-      };
-    }
-
     async function loadDashboardData() {
       try {
-        const [eventsRes, riskRes] = await Promise.all([
-          fetch(`${API_BASE}/api/events`, { cache: 'no-store' }),
-          fetch(`${API_BASE}/api/risk`, { cache: 'no-store' })
-        ]);
-        if (!eventsRes.ok || !riskRes.ok) throw new Error('worker fetch failed');
+        let events;
+        let risk;
 
-        allEvents = await eventsRes.json();
-        riskData = await riskRes.json();
+        try {
+          const [eventsRes, riskRes] = await Promise.all([
+            fetch(`${API_BASE}/api/events`, { cache: 'no-store' }),
+            fetch(`${API_BASE}/api/risk`, { cache: 'no-store' })
+          ]);
+
+           if (!eventsRes.ok || !riskRes.ok) {
+            throw new Error('worker fetch failed');
+          }
+
+          events = await eventsRes.json();
+          risk = await riskRes.json();
+        } catch (workerErr) {
+          console.warn('Worker fetch failed, falling back to legacy snapshot', workerErr);
+          const legacy = await fetchLegacySnapshot();
+          events = legacy.events;
+          risk = legacy.risk;
+        }
+
+        allEvents = events;
+        riskData = risk;
+  
+        localStorage.setItem('hormuz_events', JSON.stringify(allEvents));
+        localStorage.setItem('hormuz_risk', JSON.stringify(riskData));
+
+        renderRiskHeader(riskData);
+        renderCollectors(riskData);
+        renderComponents(riskData);
+        renderModelExplanation(riskData);
+        renderAll();
       } catch (err) {
         console.error(err);
-        try {
-          const legacy = await fetchLegacySnapshot();
-          allEvents = legacy.events;
-          riskData = legacy.risk;
-        } catch (legacyErr) {
-          console.error(legacyErr);
-          if (!useCachedData()) {
-            document.getElementById('timeline-list').innerHTML = '<div class="item"><strong>Data load error</strong><p>No live data and no cached snapshot available.</p></div>';
-          }
-          return;
+        if (!useCachedData()) {
+          document.getElementById('timeline-list').innerHTML =
+            '<div class="item"><strong>Data load error</strong><p>No live data and no cached snapshot available.</p></div>';
         }
       }
-
-      localStorage.setItem('hormuz_events', JSON.stringify(allEvents));
-      localStorage.setItem('hormuz_risk', JSON.stringify(riskData));
-
-      renderRiskHeader(riskData);
-      renderCollectors(riskData);
-      renderComponents(riskData);
-      renderModelExplanation(riskData);
-      renderAll();
     }
 
     document.getElementById('type-filter').addEventListener('change', renderAll);

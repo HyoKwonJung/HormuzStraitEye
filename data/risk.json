@@ -4,6 +4,7 @@
   "incidents": 4,
   "warnings": 2,
   "updated_at": "2026-03-16T02:47:37Z",
+  "updated_at": "2026-03-16T02:29:14Z",
   "components": {
     "incident": 54.39,
     "diversity": 80.0,
@@ -27,6 +28,7 @@
       "used_fallback": true,
       "error": "URLError: <urlopen error Tunnel connection failed: 403 Forbidden>",
       "checked_at": "2026-03-16T02:47:37Z",
+      "checked_at": "2026-03-16T02:29:14Z",
       "count": 1
     },
     "navarea": {
@@ -35,6 +37,7 @@
       "used_fallback": true,
       "error": "URLError: <urlopen error Tunnel connection failed: 403 Forbidden>",
       "checked_at": "2026-03-16T02:47:37Z",
+      "checked_at": "2026-03-16T02:29:14Z",
       "count": 1
     }
   },

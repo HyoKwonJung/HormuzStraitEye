@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hormuz Military Dashboard</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <style>
+    :root {
+      --muted: #8fa1c7;
+      --text: #e8eefc;
+      --danger: #ff4d4f;
+      --warn: #f7b955;
+      --ok: #2ccf87;
+      --border: #25314f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: linear-gradient(160deg, #0b1220, #0e1527);
+      color: var(--text);
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; display: grid; gap: 16px; }
+    .card { background: rgba(18,26,42,.92); border:1px solid var(--border); border-radius:14px; padding:16px; }
+    .header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    .title { font-size:1.35rem; font-weight:700; margin:0; }
+    .sub { color:var(--muted); margin:4px 0 0; font-size:.92rem; }
+    .badges, .controls { display:flex; gap:8px; flex-wrap:wrap; }
+    .badge, select {
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:.8rem;
+      color:var(--muted);
+      background:#0d1424;
+    }
+    .hero { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .metric { background:#0d1424; border:1px solid var(--border); border-radius:10px; padding:12px; }
+    .metric h3 { margin:0; font-size:.85rem; color:var(--muted); }
+    .metric p { margin:8px 0 0; font-size:1.6rem; font-weight:700; }
+    .high { color:var(--warn); }
+    .critical { color:var(--danger); }
+    .grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; }
+    .map-shell {
+      position:relative;
+      min-height:440px;
+      border-radius:12px;
+      overflow:hidden;
+      border:1px solid var(--border);
+    }
+    #map { width:100%; height:440px; }
+    .legend {
+      position:absolute;
+      right:10px;
+      bottom:10px;
+      background:rgba(8,12,21,.88);
+      padding:8px;
+      border-radius:8px;
+      border:1px solid var(--border);
+      font-size:.76rem;
+      color:var(--muted);
+      z-index:500;
+    }
+    .dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+    .list { display:grid; gap:8px; }
+    .item { border:1px solid var(--border); border-radius:10px; padding:10px; background:#0d1424; }
+    .split { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .pill { padding:2px 8px; border-radius:999px; font-size:.75rem; font-weight:700; }
+    .fresh { color:var(--ok); border:1px solid rgba(44,207,135,.5); }
+    .delayed { color:var(--warn); border:1px solid rgba(247,185,85,.5); }
+    .stale { color:var(--danger); border:1px solid rgba(255,77,79,.5); }
+    a { color:#8ec5ff; }
+
+
+    .warn-banner {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border: 1px solid rgba(247,185,85,.55);
+      border-radius: 10px;
+      background: rgba(247,185,85,.12);
+      color: #ffd38a;
+      font-size: .85rem;
+    }
+    .warn-banner.hidden { display: none; }
+
+    .kv-row{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:#0d1424;
+      color:var(--muted);
+    }
+
+    .kv-row strong{
+      color:var(--text);
+    }
+
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    @media (max-width:960px) {
+      .hero { grid-template-columns:repeat(2,1fr); }
+      .grid, .split { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card header">
+      <div>
+        <h1 class="title">Hormuz Military Dashboard</h1>
+        <p class="sub">Not just traffic. Operational risk intelligence for Hormuz.</p>
+        <p class="sub" id="risk-summary-line">--</p>
+      </div>
+      <div class="badges">
+        <span class="badge" id="last-updated">Last updated: --</span>
+        <span class="badge" id="freshness">Data freshness: --</span>
+        <span class="badge" id="sources-checked">Sources checked: --</span>
+        <span class="badge" id="stale-badge">Status: --</span>
+      </div>
+      <div id="fallback-warning" class="warn-banner hidden">Live collectors unavailable — showing fallback snapshot data.</div>
+    </section>
+
+    <section class="card controls">
+      <label>Event type:
+        <select id="type-filter">
+          <option value="all">All</option>
+          <option value="attack">Attack</option>
+          <option value="warning">Warning</option>
+          <option value="advisory">Advisory</option>
+          <option value="mine-related">Mine-related</option>
+          <option value="air">Air signal</option>
+        </select>
+      </label>
+      <label>Time window:
+        <select id="time-filter">
+          <option value="24">24h</option>
+          <option value="72">72h</option>
+          <option value="168">7d</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="hero">
+      <article class="metric card"><h3>Computed Risk Score</h3><p class="high" id="risk-score">-- / --</p></article>
+      <article class="metric card"><h3>Official Threat Level</h3><p class="critical" id="official-level">--</p></article>
+      <article class="metric card"><h3>Incidents (window)</h3><p id="incident-count">--</p></article>
+      <article class="metric card"><h3>Warnings in Force</h3><p id="warning-count">--</p></article>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2 style="margin-top:0">Live Operational Map</h2>
+        <div class="map-shell">
+          <div id="map"></div>
+          <div class="legend">
+            <div><span class="dot" style="background:#ff4d4f"></span>Attack</div>
+            <div><span class="dot" style="background:#f7b955"></span>Warning</div>
+            <div><span class="dot" style="background:#55a4f7"></span>Advisory</div>
+            <div><span class="dot" style="background:#ba68ff"></span>Air</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2 style="margin-top:0">Timeline</h2>
+        <div class="list" id="timeline-list"></div>
+      </article>
+    </section>
+
+    <section class="split">
+      <article class="card">
+        <h2 style="margin-top:0">Why Risk Is Up</h2>
+        <ul id="why-list" style="margin:0;padding-left:18px;color:var(--muted);line-height:1.7"></ul>
+      </article>
+
+      <article class="card">
+        <h2 style="margin-top:0">Collector Health</h2>
+        <div class="list" id="collector-list"></div>
+      </article>
+    </section>
+
+    <section class="split">
+      <article class="card">
+        <h2 style="margin-top:0">Risk Components</h2>
+        <div class="list" id="components-list"></div>
+      </article>
+
+      <article class="card">
+        <h2 style="margin-top:0">Model Explanation</h2>
+        <ul id="model-explanation" style="margin:0;padding-left:18px;color:var(--muted);line-height:1.7"></ul>
+      </article>
+    </section>
+  </main>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script>
+    const API_BASE = "https://YOUR-WORKER.workers.dev";
+
+    const TYPE_COLORS = {
+      attack: '#ff4d4f',
+      warning: '#f7b955',
+      advisory: '#55a4f7',
+      air: '#ba68ff',
+      'mine-related': '#ff9f40'
+    };
+
+    const map = L.map('map').setView([26.6, 56.2], 7);
+    const eventLayer = L.layerGroup().addTo(map);
+    let allEvents = [];
+    let riskData = null;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 12,
+      minZoom: 4,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    function formatDateTime(iso) {
+      const dt = new Date(iso);
+      return Number.isNaN(dt.getTime()) ? iso : dt.toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+    }
+
+    function hoursAgo(iso) {
+      const dt = new Date(iso);
+      return (Date.now() - dt.getTime()) / 36e5;
+    }
+
+    function stalenessLabel(minutes) {
+      if (minutes <= 60) return ['Fresh', 'fresh'];
+      if (minutes <= 180) return ['Delayed', 'delayed'];
+      return ['Stale', 'stale'];
+    }
+
+    function applyFilters(events) {
+      const type = document.getElementById('type-filter').value;
+      const hours = Number(document.getElementById('time-filter').value);
+      return events.filter((e) => (type === 'all' || e.type === type) && hoursAgo(e.time) <= hours);
+    }
+
+    function renderRiskHeader(risk) {
+      document.getElementById('risk-score').textContent = `${risk.score} / ${risk.level}`;
+      document.getElementById('official-level').textContent = risk.official_threat_level || 'CRITICAL';
+      document.getElementById('warning-count').textContent = risk.warnings;
+      document.getElementById('last-updated').textContent = `Last updated: ${formatDateTime(risk.updated_at)}`;
+      document.getElementById('freshness').textContent = `Data freshness: ${risk.data_staleness_minutes} min`;
+      document.getElementById('sources-checked').textContent = `Sources checked: ${risk.source_count}`;
+
+      const stalenessMinutes = (risk.data_staleness_minutes ?? 9999);
+      const [label, cls] = stalenessLabel(stalenessMinutes);
+      const stale = document.getElementById('stale-badge');
+      stale.textContent = `Status: ${label}`;
+      stale.className = `badge pill ${cls}`;
+
+      const c = risk.components || {};
+      const summary = `Incident ${c.incident ?? '--'} · Proximity ${c.proximity ?? '--'} · Warning ${c.warning ?? '--'} · Official modifier ${c.official_modifier ?? '--'}`;
+      const summaryLine = document.getElementById('risk-summary-line');
+      if (summaryLine) summaryLine.textContent = summary;
+      renderFallbackWarning(risk);
+    }
+
+
+    function renderFallbackWarning(risk) {
+      const warningEl = document.getElementById('fallback-warning');
+      if (!warningEl) return;
+      const status = risk.collector_status || {};
+      const ukmto = status.ukmto || {};
+      const navarea = status.navarea || {};
+      const bothFallback = ukmto.used_fallback === true && navarea.used_fallback === true;
+      const noSources = Number(risk.source_count ?? 0) === 0;
+      warningEl.classList.toggle('hidden', !(noSources || bothFallback));
+    }
+
+    function renderCollectors(risk) {
+      const list = document.getElementById('collector-list');
+      list.innerHTML = '';
+      const status = risk.collector_status || {};
+      Object.keys(status).forEach((k) => {
+        const s = status[k];
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.innerHTML = `<strong>${s.source}</strong><p>ok: ${s.ok} · fallback: ${s.used_fallback} · count: ${s.count}<br/>checked: ${formatDateTime(s.checked_at)}${s.error ? `<br/>error: ${s.error}` : ''}</p>`;
+        list.appendChild(item);
+      });
+    }
+
+    function renderComponents(risk){
+      const list = document.getElementById('components-list');
+      if(!list) return;
+      list.innerHTML = '';
+
+      const components = risk.components || {};
+      const orderedKeys = [
+        'incident',
+        'diversity',
+        'proximity',
+        'warning',
+        'air',
+        'official_modifier'
+      ];
+
+      orderedKeys.forEach((key) => {
+        if (!(key in components)) return;
+        const item = document.createElement('div');
+        item.className = 'kv-row';
+
+        const labelMap = {
+          incident: 'Incident Severity',
+          diversity: 'Threat Diversity',
+          proximity: 'Transit-Lane Proximity',
+          warning: 'Warning Pressure',
+          air: 'Air / Signal Activity',
+          official_modifier: 'Official Baseline Modifier'
+        };
+
+        item.innerHTML = `<strong>${labelMap[key] || key}</strong><span class="mono">${components[key]}</span>`;
+        list.appendChild(item);
+      });
+    }
+
+    function renderModelExplanation(risk){
+      const list = document.getElementById('model-explanation');
+      if(!list) return;
+      list.innerHTML = '';
+
+      const explanation = Array.isArray(risk.explanation) ? risk.explanation : [];
+      explanation.forEach((line) => {
+        const li = document.createElement('li');
+        li.textContent = line;
+        list.appendChild(li);
+      });
+
+      if (!explanation.length) {
+        const li = document.createElement('li');
+        li.textContent = 'No model explanation available.';
+        list.appendChild(li);
+      }
+    }
+
+    function renderWhy(risk, events){
+      const list = document.getElementById('why-list');
+      list.innerHTML = '';
+
+      const attacks = events.filter(e => e.type === 'attack').length;
+      const mines = events.filter(e => e.type === 'mine-related').length;
+      const warnings = events.filter(e => e.type === 'warning').length;
+      const advisories = events.filter(e => e.type === 'advisory').length;
+      const diversity = new Set(events.map(e => e.type)).size;
+
+      const reasons = [
+        `${attacks} attack events and ${mines} mine-related events in selected window.`,
+        `${warnings} warnings and ${advisories} advisories contributed to pressure.`,
+        `Official threat baseline remains ${risk.official_threat_level || 'CRITICAL'}.`,
+        `Selected event diversity: ${diversity} threat categories.`
+      ];
+
+      reasons.forEach((r) => {
+        const li = document.createElement('li');
+        li.textContent = r;
+        list.appendChild(li);
+      });
+    }
+
+    function renderTimeline(events) {
+      const timeline = document.getElementById('timeline-list');
+      timeline.innerHTML = '';
+      events
+        .sort((a, b) => new Date(b.time) - new Date(a.time))
+        .slice(0, 8)
+        .forEach((e) => {
+          const item = document.createElement('div');
+          item.className = 'item';
+
+          const relatedSources = Array.isArray(e.related_sources) && e.related_sources.length
+            ? `<br/>Merged sources: ${e.related_sources.join(', ')}`
+            : '';
+
+          const link = e.source_url
+            ? `<br/><a href="${e.source_url}" target="_blank" rel="noopener noreferrer">Source link</a>`
+            : '';
+
+          item.innerHTML = `
+            <strong>${formatDateTime(e.time)} — ${e.label}</strong>
+            <p>
+              Type: ${e.type} · Source: ${e.source} · Confidence: ${Number(e.confidence).toFixed(2)}
+              ${relatedSources}
+              ${link}
+            </p>
+          `;
+          timeline.appendChild(item);
+        });
+
+      document.getElementById('incident-count').textContent = events.length;
+    }
+
+    function renderMarkers(events) {
+      eventLayer.clearLayers();
+      const bounds = [];
+      events.forEach((e) => {
+        const mergedSources = Array.isArray(e.related_sources) && e.related_sources.length
+          ? `<br/>Merged sources: ${e.related_sources.join(', ')}`
+          : '';
+
+        const popup = `
+          <strong>${e.label}</strong><br/>
+          Source: ${e.source}
+          ${mergedSources}<br/>
+          Confidence: ${Number(e.confidence).toFixed(2)}<br/>
+          Time: ${formatDateTime(e.time)}
+          ${e.source_url ? `<br/><a href='${e.source_url}' target='_blank' rel='noopener noreferrer'>Raw link</a>` : ''}
+        `;
+
+        L.circleMarker([e.lat, e.lon], {
+          radius: 8,
+          color: '#fff',
+          weight: 1,
+          fillColor: TYPE_COLORS[e.type] || '#fff',
+          fillOpacity: .95
+        }).bindPopup(popup).addTo(eventLayer);
+        bounds.push([e.lat, e.lon]);
+      });
+      if (bounds.length) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 8 });
+    }
+
+    function renderAll() {
+      const filtered = applyFilters([...allEvents]);
+      renderTimeline(filtered);
+      renderMarkers(filtered);
+      renderWhy(riskData, filtered);
+    }
+
+    function useCachedData() {
+      try {
+        const events = JSON.parse(localStorage.getItem('hormuz_events') || '[]');
+        const risk = JSON.parse(localStorage.getItem('hormuz_risk') || '{}');
+        if(Array.isArray(events) && events.length && risk.updated_at){
+          allEvents = events;
+          riskData = risk;
+          renderRiskHeader(riskData);
+          renderCollectors(riskData);
+          renderComponents(riskData);
+          renderModelExplanation(riskData);
+          renderAll();
+          return true;
+        }
+      } catch (_) {}
+      return false;
+    }
+
+    async function loadDashboardData() {
+      try {
+        const [eventsRes, riskRes] = await Promise.all([
+          fetch(`${API_BASE}/api/events`, { cache: 'no-store' }),
+          fetch(`${API_BASE}/api/risk`, { cache: 'no-store' })
+        ]);
+        if (!eventsRes.ok || !riskRes.ok) {
+          if (API_BASE.includes('YOUR-WORKER')) {
+            const [legacyEventsRes, legacyRiskRes] = await Promise.all([
+              fetch('../data/events.json', { cache: 'no-store' }),
+              fetch('../data/risk.json', { cache: 'no-store' })
+            ]);
+            if (!legacyEventsRes.ok || !legacyRiskRes.ok) throw new Error('fetch failed');
+            allEvents = await legacyEventsRes.json();
+            riskData = await legacyRiskRes.json();
+          } else {
+            throw new Error('fetch failed');
+          }
+        } else {
+          allEvents = await eventsRes.json();
+          riskData = await riskRes.json();
+        }
+
+        localStorage.setItem('hormuz_events', JSON.stringify(allEvents));
+        localStorage.setItem('hormuz_risk', JSON.stringify(riskData));
+
+        renderRiskHeader(riskData);
+        renderCollectors(riskData);
+        renderComponents(riskData);
+        renderModelExplanation(riskData);
+        renderAll();
+      } catch (err) {
+        console.error(err);
+        if (API_BASE.includes('YOUR-WORKER')) {
+          try {
+            const [legacyEventsRes, legacyRiskRes] = await Promise.all([
+              fetch('../data/events.json', { cache: 'no-store' }),
+              fetch('../data/risk.json', { cache: 'no-store' })
+            ]);
+            if (legacyEventsRes.ok && legacyRiskRes.ok) {
+              allEvents = await legacyEventsRes.json();
+              riskData = await legacyRiskRes.json();
+              renderRiskHeader(riskData);
+              renderCollectors(riskData);
+              renderComponents(riskData);
+              renderModelExplanation(riskData);
+              renderAll();
+              return;
+            }
+          } catch (_) {}
+        }
+        if (!useCachedData()) {
+          document.getElementById('timeline-list').innerHTML = '<div class="item"><strong>Data load error</strong><p>No live data and no cached snapshot available.</p></div>';
+        }
+      }
+    }
+
+    document.getElementById('type-filter').addEventListener('change', renderAll);
+    document.getElementById('time-filter').addEventListener('change', renderAll);
+    loadDashboardData();
+  </script>
+</body>
+</html>

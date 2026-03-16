@@ -12,7 +12,7 @@ It is designed to answer four user questions immediately:
 
 ## 2) Product Philosophy
 
-This product is intentionally built around **observable risk signals**, not hidden classified tracking.
+This product is intentionally built around **observable risk signals**, not hidden military tracking.
 
 ### Not claimed
 - Real-time position of all warships
@@ -81,7 +81,7 @@ Human-readable reasoning tied to recent events and official warnings.
 
 ## 7) Example Header Copy
 
-- **Hormuz Security Risk: HIGH**
+- **Hormuz Military Risk: HIGH**
 - **Official Regional Maritime Threat: CRITICAL**
 
 Supporting line:

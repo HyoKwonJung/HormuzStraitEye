@@ -48,8 +48,6 @@ export function parseDateTime(text, nowIso) {
     /(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?Z?)/,
     /(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4}\s+\d{2}:\d{2}\s*UTC)/i,
     /(\d{1,2}\/\d{1,2}\/\d{4}\s+\d{2}:\d{2})/,
-    /(\d{1,2}-[A-Za-z]{3,9}-\d{2,4}\s+\d{2}:\d{2}\s*(?:UTC|Z)?)/i,
-    /(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{2,4}\s+\d{2}:\d{2})/i,
   ];
   for (const p of patterns) {
     const m = source.match(p);
@@ -62,14 +60,6 @@ export function parseDateTime(text, nowIso) {
     if (slash) {
       const [, d, mo, y, h, mi] = slash;
       dt = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi)));
-      if (!Number.isNaN(dt.getTime())) return dt.toISOString().replace(/\.\d{3}Z$/, "Z");
-    }
-
-    const dmyMon = raw.match(/^(\d{1,2})[-\s]([A-Za-z]{3,9})[-\s](\d{2,4})\s+(\d{2}):(\d{2})(?:\s*(?:UTC|Z))?$/i);
-    if (dmyMon) {
-      const [, d, mon, yRaw, h, mi] = dmyMon;
-      const year = Number(yRaw.length === 2 ? `20${yRaw}` : yRaw);
-      dt = new Date(`${d} ${mon} ${year} ${h}:${mi} UTC`);
       if (!Number.isNaN(dt.getTime())) return dt.toISOString().replace(/\.\d{3}Z$/, "Z");
     }
   }

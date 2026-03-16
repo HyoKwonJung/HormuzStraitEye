@@ -1,0 +1,38 @@
+[
+  {
+    "lat": 26.55,
+    "lon": 56.16,
+    "type": "attack",
+    "label": "Security incident causing fire",
+    "source": "UKMTO",
+    "confidence": 0.88,
+    "time": "2026-03-16T00:10:22Z"
+  },
+  {
+    "lat": 26.73,
+    "lon": 56.35,
+    "type": "warning",
+    "label": "NAVAREA IX warning issued",
+    "source": "NAVAREA IX",
+    "confidence": 0.93,
+    "time": "2026-03-15T21:45:22Z"
+  },
+  {
+    "lat": 26.89,
+    "lon": 55.96,
+    "type": "advisory",
+    "label": "Regional threat advisory update",
+    "source": "JMIC",
+    "confidence": 0.99,
+    "time": "2026-03-15T19:25:22Z"
+  },
+  {
+    "lat": 26.46,
+    "lon": 56.55,
+    "type": "air",
+    "label": "Unusual patrol orbit signal",
+    "source": "OpenSky",
+    "confidence": 0.72,
+    "time": "2026-03-15T17:00:22Z"
+  }
+]

@@ -40,7 +40,12 @@ def _clean_html(fragment: str) -> str:
 
 
 def _fetch(url: str, timeout_s: int = 20) -> str:
-    req = urllib.request.Request(url, headers={"User-Agent": "HormuzStraitEye/1.0"})
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "no-cache",
+    })
     with urllib.request.urlopen(req, timeout=timeout_s) as response:
         return response.read().decode("utf-8", errors="replace")
 
@@ -183,7 +188,7 @@ def collect_ukmto_events_with_status(now: datetime, url: str = UKMTO_URL) -> tup
             "source": "UKMTO",
             "ok": False,
             "used_fallback": True,
-            "error": str(exc)[:180],
+            "error": f"{exc.__class__.__name__}: {exc}"[:180],
             "checked_at": _iso_now(now),
             "count": len(fallback),
         }

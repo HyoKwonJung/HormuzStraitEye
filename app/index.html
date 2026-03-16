@@ -77,6 +77,18 @@
     .stale { color:var(--danger); border:1px solid rgba(255,77,79,.5); }
     a { color:#8ec5ff; }
 
+
+    .warn-banner {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border: 1px solid rgba(247,185,85,.55);
+      border-radius: 10px;
+      background: rgba(247,185,85,.12);
+      color: #ffd38a;
+      font-size: .85rem;
+    }
+    .warn-banner.hidden { display: none; }
+
     .kv-row{
       display:flex;
       justify-content:space-between;
@@ -116,6 +128,7 @@
         <span class="badge" id="sources-checked">Sources checked: --</span>
         <span class="badge" id="stale-badge">Status: --</span>
       </div>
+      <div id="fallback-warning" class="warn-banner hidden">Live collectors unavailable — showing fallback snapshot data.</div>
     </section>
 
     <section class="card controls">
@@ -245,7 +258,8 @@
       document.getElementById('freshness').textContent = `Data freshness: ${risk.data_staleness_minutes} min`;
       document.getElementById('sources-checked').textContent = `Sources checked: ${risk.source_count}`;
 
-      const [label, cls] = stalenessLabel(risk.data_staleness_minutes || 9999);
+      const stalenessMinutes = (risk.data_staleness_minutes ?? 9999);
+      const [label, cls] = stalenessLabel(stalenessMinutes);
       const stale = document.getElementById('stale-badge');
       stale.textContent = `Status: ${label}`;
       stale.className = `badge pill ${cls}`;
@@ -254,6 +268,19 @@
       const summary = `Incident ${c.incident ?? '--'} · Proximity ${c.proximity ?? '--'} · Warning ${c.warning ?? '--'} · Official modifier ${c.official_modifier ?? '--'}`;
       const summaryLine = document.getElementById('risk-summary-line');
       if (summaryLine) summaryLine.textContent = summary;
+      renderFallbackWarning(risk);
+    }
+
+
+    function renderFallbackWarning(risk) {
+      const warningEl = document.getElementById('fallback-warning');
+      if (!warningEl) return;
+      const status = risk.collector_status || {};
+      const ukmto = status.ukmto || {};
+      const navarea = status.navarea || {};
+      const bothFallback = ukmto.used_fallback === true && navarea.used_fallback === true;
+      const noSources = Number(risk.source_count ?? 0) === 0;
+      warningEl.classList.toggle('hidden', !(noSources || bothFallback));
     }
 
     function renderCollectors(risk) {

@@ -1,0 +1,54 @@
+[
+  {
+    "lat": 26.55,
+    "lon": 56.16,
+    "type": "attack",
+    "label": "UKMTO fallback: Security incident causing fire near transit lane",
+    "source": "UKMTO",
+    "source_url": "https://www.ukmto.org/indian-ocean/recent-incidents",
+    "confidence": 0.88,
+    "time": "2026-03-16T01:23:29Z",
+    "related_sources": [
+      "UKMTO"
+    ]
+  },
+  {
+    "lat": 26.73,
+    "lon": 56.35,
+    "type": "warning",
+    "label": "NAVAREA IX fallback: New navigation warning issued near chokepoint",
+    "source": "NAVAREA IX",
+    "source_url": "https://hydro.gov.pk/navarea-warnings",
+    "confidence": 0.93,
+    "time": "2026-03-16T01:23:29Z",
+    "related_sources": [
+      "NAVAREA IX"
+    ]
+  },
+  {
+    "lat": 26.89,
+    "lon": 55.96,
+    "type": "advisory",
+    "label": "JMIC regional threat advisory update",
+    "source": "JMIC",
+    "source_url": "https://www.jmic-uk.com/advisories",
+    "confidence": 0.99,
+    "time": "2026-03-15T20:33:29Z",
+    "related_sources": [
+      "JMIC"
+    ]
+  },
+  {
+    "lat": 26.46,
+    "lon": 56.55,
+    "type": "air",
+    "label": "Unusual patrol orbit signal",
+    "source": "OpenSky",
+    "source_url": "https://opensky-network.org/",
+    "confidence": 0.72,
+    "time": "2026-03-15T18:08:29Z",
+    "related_sources": [
+      "OpenSky"
+    ]
+  }
+]

@@ -1,0 +1,42 @@
+{
+  "score": 70,
+  "level": "HIGH",
+  "incidents": 4,
+  "warnings": 2,
+  "updated_at": "2026-03-16T01:23:29Z",
+  "components": {
+    "incident": 54.39,
+    "diversity": 80.0,
+    "proximity": 100.0,
+    "warning": 32.0,
+    "air": 28.0,
+    "official_modifier": 10
+  },
+  "explanation": [
+    "1 high-severity attack/mine events in scope.",
+    "1 warnings and 1 advisories contributed to warning pressure.",
+    "Event diversity includes 4 distinct threat categories.",
+    "Official baseline modifier applied: CRITICAL (+10)."
+  ],
+  "official_threat_level": "CRITICAL",
+  "source_count": 0,
+  "collector_status": {
+    "ukmto": {
+      "source": "UKMTO",
+      "ok": false,
+      "used_fallback": true,
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>",
+      "checked_at": "2026-03-16T01:23:29Z",
+      "count": 1
+    },
+    "navarea": {
+      "source": "NAVAREA IX",
+      "ok": false,
+      "used_fallback": true,
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>",
+      "checked_at": "2026-03-16T01:23:29Z",
+      "count": 1
+    }
+  },
+  "data_staleness_minutes": 0
+}

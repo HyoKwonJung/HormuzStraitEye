@@ -1,5 +1,14 @@
 # Operations Checklist
 
+Use this checklist to verify Worker + KV snapshot updates are healthy and visible to users.
+
+## 0) Worker + KV wiring
+- Confirm Worker is deployed and reachable.
+- Confirm KV namespace `DASHBOARD_SNAPSHOTS` is bound.
+- Confirm Cron Trigger runs every 30 minutes.
+- Confirm `/api/events` and `/api/risk` return JSON.
+
+
 Use this checklist to verify that scheduled updates are healthy and visible to users.
 
 ## 0) Source URL validation

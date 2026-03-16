@@ -461,51 +461,31 @@
       return false;
     }
 
-    async function fetchLegacySnapshot() {
-      const [legacyEventsRes, legacyRiskRes] = await Promise.all([
-        fetch('../data/events.json', { cache: 'no-store' }),
-        fetch('../data/risk.json', { cache: 'no-store' })
-      ]);
-      if (!legacyEventsRes.ok || !legacyRiskRes.ok) throw new Error('legacy fetch failed');
-      return {
-        events: await legacyEventsRes.json(),
-        risk: await legacyRiskRes.json(),
-      };
-    }
-
     async function loadDashboardData() {
       try {
         const [eventsRes, riskRes] = await Promise.all([
-          fetch(`${API_BASE}/api/events`, { cache: 'no-store' }),
-          fetch(`${API_BASE}/api/risk`, { cache: 'no-store' })
+          fetch('../data/events.json', { cache: 'no-store' }),
+          fetch('../data/risk.json', { cache: 'no-store' })
         ]);
-        if (!eventsRes.ok || !riskRes.ok) throw new Error('worker fetch failed');
+        if (!eventsRes.ok || !riskRes.ok) throw new Error('fetch failed');
 
         allEvents = await eventsRes.json();
         riskData = await riskRes.json();
+
+        localStorage.setItem('hormuz_events', JSON.stringify(allEvents));
+        localStorage.setItem('hormuz_risk', JSON.stringify(riskData));
+
+        renderRiskHeader(riskData);
+        renderCollectors(riskData);
+        renderComponents(riskData);
+        renderModelExplanation(riskData);
+        renderAll();
       } catch (err) {
         console.error(err);
-        try {
-          const legacy = await fetchLegacySnapshot();
-          allEvents = legacy.events;
-          riskData = legacy.risk;
-        } catch (legacyErr) {
-          console.error(legacyErr);
-          if (!useCachedData()) {
-            document.getElementById('timeline-list').innerHTML = '<div class="item"><strong>Data load error</strong><p>No live data and no cached snapshot available.</p></div>';
-          }
-          return;
+        if (!useCachedData()) {
+          document.getElementById('timeline-list').innerHTML = '<div class="item"><strong>Data load error</strong><p>No live data and no cached snapshot available.</p></div>';
         }
       }
-
-      localStorage.setItem('hormuz_events', JSON.stringify(allEvents));
-      localStorage.setItem('hormuz_risk', JSON.stringify(riskData));
-
-      renderRiskHeader(riskData);
-      renderCollectors(riskData);
-      renderComponents(riskData);
-      renderModelExplanation(riskData);
-      renderAll();
     }
 
     document.getElementById('type-filter').addEventListener('change', renderAll);

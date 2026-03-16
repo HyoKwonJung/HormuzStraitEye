@@ -1,0 +1,73 @@
+name: Update Dashboard Data
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate JSON data
+        run: python scripts/update_data.py
+
+      - name: Validate schema fields
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          events = json.loads(Path('data/events.json').read_text())
+          risk = json.loads(Path('data/risk.json').read_text())
+
+          assert isinstance(events, list) and len(events) > 0
+          required_event = {'lat','lon','type','label','source','confidence','time'}
+          for e in events:
+              assert required_event.issubset(e)
+
+          required_risk = {'updated_at','source_count','collector_status','data_staleness_minutes'}
+          assert required_risk.issubset(risk)
+          print('schema validation ok')
+          PY
+
+      - name: Simulate collector failures and verify resilience
+        run: |
+          cp data/events.json /tmp/events_before.json
+          cp data/risk.json /tmp/risk_before.json
+          FORCE_UKMTO_FAIL=1 FORCE_NAVAREA_FAIL=1 python scripts/update_data.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          events = json.loads(Path('data/events.json').read_text())
+          risk = json.loads(Path('data/risk.json').read_text())
+          assert len(events) > 0
+          assert 'collector_status' in risk
+          print('resilience check ok')
+          PY
+
+      - name: Commit updated data files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/events.json data/risk.json
+          if git diff --cached --quiet; then
+            echo "No changes detected"
+            exit 0
+          fi
+          git commit -m "chore(data): refresh dashboard JSON data"
+
+      - name: Push changes
+        run: git push

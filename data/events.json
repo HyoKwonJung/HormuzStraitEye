@@ -7,7 +7,10 @@
     "source": "UKMTO",
     "source_url": "https://www.ukmto.org/indian-ocean/recent-incidents",
     "confidence": 0.88,
-    "time": "2026-03-16T00:37:04Z"
+    "time": "2026-03-16T00:48:06Z",
+    "related_sources": [
+      "UKMTO"
+    ]
   },
   {
     "lat": 26.73,
@@ -17,7 +20,10 @@
     "source": "NAVAREA IX",
     "source_url": "https://hydro.gov.pk/navarea-warnings",
     "confidence": 0.93,
-    "time": "2026-03-16T00:37:04Z"
+    "time": "2026-03-16T00:48:06Z",
+    "related_sources": [
+      "NAVAREA IX"
+    ]
   },
   {
     "lat": 26.89,
@@ -27,7 +33,10 @@
     "source": "JMIC",
     "source_url": "https://www.jmic-uk.com/advisories",
     "confidence": 0.99,
-    "time": "2026-03-15T19:47:04Z"
+    "time": "2026-03-15T19:58:06Z",
+    "related_sources": [
+      "JMIC"
+    ]
   },
   {
     "lat": 26.46,
@@ -37,6 +46,9 @@
     "source": "OpenSky",
     "source_url": "https://opensky-network.org/",
     "confidence": 0.72,
-    "time": "2026-03-15T17:22:04Z"
+    "time": "2026-03-15T17:33:06Z",
+    "related_sources": [
+      "OpenSky"
+    ]
   }
 ]

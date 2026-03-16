@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-"""Generate dashboard JSON from collectors with safe fallback policy.
-
-Policy: bad update보다 stale update가 낫다 -> keep previous valid files if new data is invalid.
-"""
+"""Generate dashboard JSON from collectors with safe stale-data fallback policy."""
 
 from __future__ import annotations
 
 import json
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -54,22 +52,13 @@ def load_json(path: Path, default):
 
 
 def validate_events(events: list[dict]) -> bool:
-    if not isinstance(events, list) or len(events) == 0:
+    if not isinstance(events, list) or not events:
         return False
-    for event in events:
-        if not isinstance(event, dict):
-            return False
-        if not REQUIRED_EVENT_FIELDS.issubset(event.keys()):
-            return False
-    return True
+    return all(isinstance(e, dict) and REQUIRED_EVENT_FIELDS.issubset(e.keys()) for e in events)
 
 
 def validate_risk(risk: dict) -> bool:
-    if not isinstance(risk, dict):
-        return False
-    if not REQUIRED_RISK_FIELDS.issubset(risk.keys()):
-        return False
-    return True
+    return isinstance(risk, dict) and REQUIRED_RISK_FIELDS.issubset(risk.keys())
 
 
 def build_supporting_events(now: datetime) -> list[dict]:
@@ -97,16 +86,59 @@ def build_supporting_events(now: datetime) -> list[dict]:
     ]
 
 
+def _normalize_label(text: str) -> str:
+    text = text.lower()
+    text = re.sub(r"\b(ukmto|navarea\s*ix|jmic|opensky|warning|advisory|incident|fallback)\b", " ", text)
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    tokens = [t for t in text.split() if len(t) > 2]
+    return " ".join(tokens[:8])
+
+
+def _time_bucket(ts: str) -> str:
+    try:
+        dt = parse_iso(ts)
+        return dt.strftime("%Y-%m-%dT%H")
+    except Exception:
+        return "unknown"
+
+
+def _event_key(event: dict) -> tuple:
+    lat = round(float(event.get("lat", 0.0)), 1)
+    lon = round(float(event.get("lon", 0.0)), 1)
+    etype = str(event.get("type", "warning")).lower()
+    label_norm = _normalize_label(str(event.get("label", "")))
+    t_bucket = _time_bucket(str(event.get("time", "")))
+    return etype, lat, lon, label_norm, t_bucket
+
+
 def deduplicate_events(events: list[dict]) -> list[dict]:
-    dedup: list[dict] = []
-    seen: set[tuple[str, str, str]] = set()
+    merged: dict[tuple, dict] = {}
     for event in events:
-        key = (str(event.get("source", "")), str(event.get("label", ""))[:80], str(event.get("time", "")))
-        if key in seen:
+        key = _event_key(event)
+        if key not in merged:
+            copy = dict(event)
+            copy["related_sources"] = [str(event.get("source", "unknown"))]
+            merged[key] = copy
             continue
-        seen.add(key)
-        dedup.append(event)
-    return dedup
+
+        existing = merged[key]
+        existing["confidence"] = max(float(existing.get("confidence", 0.0)), float(event.get("confidence", 0.0)))
+
+        # keep earliest event time as incident anchor
+        try:
+            current_time = parse_iso(str(existing.get("time")))
+            incoming_time = parse_iso(str(event.get("time")))
+            if incoming_time < current_time:
+                existing["time"] = event.get("time")
+        except Exception:
+            pass
+
+        src = str(event.get("source", "unknown"))
+        related = set(existing.get("related_sources", []))
+        related.add(src)
+        existing["related_sources"] = sorted(related)
+
+    return list(merged.values())
 
 
 def compute_staleness_minutes(now: datetime, events: list[dict]) -> int:
@@ -134,8 +166,9 @@ def main() -> None:
     events = deduplicate_events(ukmto_events + navarea_events + build_supporting_events(now))
     events = sorted(events, key=lambda e: str(e.get("time", "")), reverse=True)
 
-    risk = compute_risk(events, now)
-    risk["official_threat_level"] = "CRITICAL"
+    official_level = "CRITICAL"
+    risk = compute_risk(events, now, official_threat_level=official_level)
+    risk["official_threat_level"] = official_level
     risk["source_count"] = sum(1 for s in (ukmto_status, navarea_status) if s.get("ok"))
     risk["collector_status"] = {"ukmto": ukmto_status, "navarea": navarea_status}
     risk["data_staleness_minutes"] = compute_staleness_minutes(now, events)

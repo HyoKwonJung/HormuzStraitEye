@@ -1,0 +1,27 @@
+name: Legacy JSON Update (Reference)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  legacy-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run legacy pipeline (manual only)
+        run: |
+          python scripts/update_data.py
+          python scripts/verify_data_snapshot.py
+
+      - name: Note
+        run: |
+          echo "Primary live pipeline is now Cloudflare Worker + KV."
+          echo "This workflow is retained as legacy/manual reference."

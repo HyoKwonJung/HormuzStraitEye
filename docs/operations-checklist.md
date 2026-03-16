@@ -55,7 +55,7 @@ Healthy target:
 - `ok: true`
 - `used_fallback: false`
 
-## 5) UI consistency
+## 6) UI consistency
 Verify deployed UI values match repository JSON:
 - Last updated
 - Data freshness

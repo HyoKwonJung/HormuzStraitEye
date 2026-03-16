@@ -2,6 +2,11 @@
 
 Use this checklist to verify that scheduled updates are healthy and visible to users.
 
+## 0) Source URL validation
+- Run `python scripts/validate_source_urls.py` and compare configured URLs with final resolved URLs.
+- Confirm the URL opened in browser is the same as collector target (including redirects).
+- Prefer stable listing/text/document endpoints over fragile UI pages when available.
+
 ## 1) GitHub Actions health
 - Open **Actions** tab in the repository.
 - Select **Update Dashboard Data** workflow.
@@ -54,3 +59,16 @@ Verify deployed UI values match repository JSON:
 - `data/events.json` updated
 - `data/risk.json` updated
 - Dashboard shows latest values
+
+
+## 7) Alternative collector runtime
+If GitHub Actions egress is blocked (for example repeated 403/Tunnel errors), run collectors in a separate environment:
+- Cloudflare Worker cron
+- Render/Railway scheduled job
+- VPS cron
+- local scheduled runner
+
+Recommended split for low-cost reliability:
+- Frontend: GitHub Pages
+- Collectors: external cron runtime
+- Output: update `data/events.json` and `data/risk.json`

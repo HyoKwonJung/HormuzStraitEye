@@ -28,10 +28,13 @@ def _iso_now(now: datetime) -> str:
 
 def _fetch_text(url: str, timeout_s: int = 20) -> str:
     req = urllib.request.Request(url, headers={
-        "User-Agent": "Mozilla/5.0",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
         "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Referer": "https://www.google.com/",
+        "Upgrade-Insecure-Requests": "1",
     })
     with urllib.request.urlopen(req, timeout=timeout_s) as response:
         return response.read().decode("utf-8", errors="replace")

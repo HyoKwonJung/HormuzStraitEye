@@ -29,3 +29,14 @@ Open `http://localhost:4173` in your browser.
 ## Important Note
 
 This prototype currently uses sample data for demonstration. It is designed to communicate risk structure and UX behavior, not to provide live operational truth by itself.
+
+
+## Collector URL Diagnostics
+
+To verify that configured collector URLs match real browser-resolved endpoints:
+
+```bash
+python scripts/validate_source_urls.py
+```
+
+Use this before debugging parser logic when 403 or redirect issues appear.

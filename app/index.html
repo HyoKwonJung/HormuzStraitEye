@@ -4,16 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Public OSINT dashboard for monitoring operational risk in and around the Strait of Hormuz." />
-  <meta name="robots" content="index,follow" />
   <link rel="canonical" href="https://hyokwonjung.github.io/HormuzStraitEye/app/" />
-
-  <meta property="og:title" content="Hormuz Security Dashboard" />
-  <meta property="og:description" content="Operational risk intelligence for the Strait of Hormuz." />
-  <meta property="og:url" content="https://hyokwonjung.github.io/HormuzStraitEye/app/" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Hormuz Security Dashboard" />
-  <meta name="twitter:description" content="Operational risk intelligence for the Strait of Hormuz." />
   <title>Hormuz Security Dashboard</title>
   <link
     rel="stylesheet"
@@ -29,99 +20,93 @@
       --warn: #f7b955;
       --ok: #2ccf87;
       --border: #25314f;
+      --card-bg: rgba(18, 26, 42, 0.92);
+      --deep-bg: #0d1424;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: Inter, Arial, sans-serif;
+      font-family: 'Inter', Arial, sans-serif;
       background: linear-gradient(160deg, #0b1220, #0e1527);
       color: var(--text);
     }
     .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; display: grid; gap: 16px; }
-    .card { background: rgba(18,26,42,.92); border:1px solid var(--border); border-radius:14px; padding:16px; }
-    .header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
-    .title { font-size:1.35rem; font-weight:700; margin:0; }
-    .sub { color:var(--muted); margin:4px 0 0; font-size:.92rem; }
-    .badges, .controls { display:flex; gap:8px; flex-wrap:wrap; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+    .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .title { font-size: 1.35rem; font-weight: 700; margin: 0; }
+    .sub { color: var(--muted); margin: 4px 0 0; font-size: 0.92rem; }
+    .badges { display: flex; gap: 8px; flex-wrap: wrap; }
     .badge, select {
-      border:1px solid var(--border);
-      border-radius:999px;
-      padding:6px 10px;
-      font-size:.8rem;
-      color:var(--muted);
-      background:#0d1424;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: var(--deep-bg);
     }
-    .hero { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
-    .metric { background:#0d1424; border:1px solid var(--border); border-radius:10px; padding:12px; }
-    .metric h3 { margin:0; font-size:.85rem; color:var(--muted); }
-    .metric p { margin:8px 0 0; font-size:1.6rem; font-weight:700; }
-    .high { color:var(--warn); }
-    .critical { color:var(--danger); }
-    .grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; }
+    .hero { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .metric { background: var(--deep-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+    .metric h3 { margin: 0; font-size: 0.85rem; color: var(--muted); }
+    .metric p { margin: 8px 0 0; font-size: 1.6rem; font-weight: 700; }
+    .high { color: var(--warn); }
+    .critical { color: var(--danger); }
+    
+    /* Layout Grid */
+    .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
     .map-shell {
-      position:relative;
-      min-height:440px;
-      border-radius:12px;
-      overflow:hidden;
-      border:1px solid var(--border);
+      position: relative;
+      min-height: 440px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
     }
-    #map { width:100%; height:440px; }
+    #map { width: 100%; height: 440px; }
     .legend {
-      position:absolute;
-      right:10px;
-      bottom:10px;
-      background:rgba(8,12,21,.88);
-      padding:8px;
-      border-radius:8px;
-      border:1px solid var(--border);
-      font-size:.76rem;
-      color:var(--muted);
-      z-index:500;
+      position: absolute; right: 10px; bottom: 10px;
+      background: rgba(8, 12, 21, 0.88); padding: 8px;
+      border-radius: 8px; border: 1px solid var(--border);
+      font-size: .76rem; color: var(--muted); z-index: 500;
     }
-    .dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
-    .list { display:grid; gap:8px; }
-    .item { border:1px solid var(--border); border-radius:10px; padding:10px; background:#0d1424; }
-    .split { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-    .pill { padding:2px 8px; border-radius:999px; font-size:.75rem; font-weight:700; }
-    .fresh { color:var(--ok); border:1px solid rgba(44,207,135,.5); }
-    .delayed { color:var(--warn); border:1px solid rgba(247,185,85,.5); }
-    .stale { color:var(--danger); border:1px solid rgba(255,77,79,.5); }
-    a { color:#8ec5ff; }
-
-
-    .warn-banner {
-      margin-top: 8px;
-      padding: 8px 10px;
-      border: 1px solid rgba(247,185,85,.55);
-      border-radius: 10px;
-      background: rgba(247,185,85,.12);
-      color: #ffd38a;
-      font-size: .85rem;
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    
+    /* Intelligence List Style */
+    .intel-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+    .intel-card { 
+      padding: 12px; border-radius: 10px; background: var(--deep-bg); 
+      border: 1px solid var(--border); border-top: 3px solid var(--muted);
     }
-    .warn-banner.hidden { display: none; }
-
-    .kv-row{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      padding:10px 12px;
-      border:1px solid var(--border);
-      border-radius:10px;
-      background:#0d1424;
-      color:var(--muted);
+    .intel-card h4 { 
+      margin: 0 0 10px; font-size: 0.8rem; color: var(--text); 
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--border); padding-bottom: 6px;
     }
+    .intel-list { list-style: none; padding: 0; margin: 0; }
+    .intel-item { margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed #25314f; }
+    .intel-item:last-child { border-bottom: none; margin-bottom: 0; }
+    .intel-item p { margin: 0; font-size: 0.82rem; line-height: 1.35; color: var(--text); }
+    .intel-item .meta { font-size: 0.65rem; color: var(--muted); margin-top: 4px; display: block; }
+    
+    .status-indicator { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+    .intel-card.alert { border-top-color: var(--danger); }
+    .intel-card.alert .status-indicator { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+    .intel-card.active { border-top-color: #55a4f7; }
+    .intel-card.active .status-indicator { background: #55a4f7; box-shadow: 0 0 6px #55a4f7; }
 
-    .kv-row strong{
-      color:var(--text);
-    }
+    /* Common List */
+    .list { display: grid; gap: 8px; }
+    .item { border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: var(--deep-bg); }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .pill { padding: 2px 8px; border-radius: 999px; font-size: .75rem; font-weight: 700; }
+    .fresh { color: var(--ok); border: 1px solid rgba(44, 207, 135, .5); }
+    .delayed { color: var(--warn); border: 1px solid rgba(247, 185, 85, .5); }
+    .stale { color: var(--danger); border: 1px solid rgba(255, 77, 79, .5); }
+    a { color: #8ec5ff; text-decoration: none; }
+    .kv-row { display: flex; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    .kv-row:last-child { border-bottom: none; }
+    .mono { font-family: ui-monospace, monospace; font-size: 0.85rem; }
 
-    .mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    }
-
-    @media (max-width:960px) {
-      .hero { grid-template-columns:repeat(2,1fr); }
-      .grid, .split { grid-template-columns:1fr; }
+    @media (max-width: 960px) {
+      .hero, .intel-grid, .grid, .split { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -130,36 +115,13 @@
     <section class="card header">
       <div>
         <h1 class="title">Hormuz Security Dashboard</h1>
-        <p class="sub">Operational risk intelligence for Hormuz.</p>
+        <p class="sub">Strategic Intelligence for the Strait of Hormuz.</p>
         <p class="sub" id="risk-summary-line">--</p>
       </div>
       <div class="badges">
         <span class="badge" id="last-updated">Last updated: --</span>
-        <span class="badge" id="freshness">Data freshness: --</span>
-        <span class="badge" id="sources-checked">Sources checked: --</span>
         <span class="badge" id="stale-badge">Status: --</span>
       </div>
-      <div id="fallback-warning" class="warn-banner hidden">Live collectors unavailable — showing fallback snapshot data.</div>
-    </section>
-
-    <section class="card controls">
-      <label>Event type:
-        <select id="type-filter">
-          <option value="all">All</option>
-          <option value="attack">Attack</option>
-          <option value="warning">Warning</option>
-          <option value="advisory">Advisory</option>
-          <option value="mine-related">Mine-related</option>
-          <option value="air">Air signal</option>
-        </select>
-      </label>
-      <label>Time window:
-        <select id="time-filter">
-          <option value="24">24h</option>
-          <option value="72">72h</option>
-          <option value="168">7d</option>
-        </select>
-      </label>
     </section>
 
     <section class="hero">
@@ -171,7 +133,7 @@
 
     <section class="grid">
       <article class="card">
-        <h2 style="margin-top:0">Live Operational Map</h2>
+        <h2 style="margin:0 0 12px 0; font-size:1.1rem">Live Operational Picture</h2>
         <div class="map-shell">
           <div id="map"></div>
           <div class="legend">
@@ -181,86 +143,44 @@
             <div><span class="dot" style="background:#ba68ff"></span>Air</div>
           </div>
         </div>
+
+        <div class="intel-grid" id="intelligence-container"></div>
       </article>
 
       <article class="card">
-        <h2 style="margin-top:0">Timeline</h2>
+        <h2 style="margin:0 0 12px 0; font-size:1.1rem">Event Timeline</h2>
         <div class="list" id="timeline-list"></div>
       </article>
     </section>
 
     <section class="split">
       <article class="card">
-        <h2 style="margin-top:0">Why Risk Is Up</h2>
-        <ul id="why-list" style="margin:0;padding-left:18px;color:var(--muted);line-height:1.7"></ul>
-      </article>
-
-      <article class="card">
-        <h2 style="margin-top:0">Collector Health</h2>
-        <div class="list" id="collector-list"></div>
-      </article>
-    </section>
-
-    <section class="split">
-      <article class="card">
-        <h2 style="margin-top:0">Risk Components</h2>
+        <h2 style="margin-top:0; font-size:1rem">Risk Components</h2>
         <div class="list" id="components-list"></div>
       </article>
-
       <article class="card">
-        <h2 style="margin-top:0">Model Explanation</h2>
-        <ul id="model-explanation" style="margin:0;padding-left:18px;color:var(--muted);line-height:1.7"></ul>
+        <h2 style="margin-top:0; font-size:1rem">Collector Health</h2>
+        <div class="list" id="collector-list"></div>
       </article>
     </section>
   </main>
 
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const API_BASE = "https://hormuzstraiteye.po98054-43d.workers.dev";
-
-    const TYPE_COLORS = {
-      attack: '#ff4d4f',
-      warning: '#f7b955',
-      advisory: '#55a4f7',
-      air: '#ba68ff',
-      'mine-related': '#ff9f40'
-    };
+    const TYPE_COLORS = { attack: '#ff4d4f', warning: '#f7b955', advisory: '#55a4f7', air: '#ba68ff', 'mine-related': '#ff9f40' };
 
     const map = L.map('map').setView([26.6, 56.2], 7);
     const eventLayer = L.layerGroup().addTo(map);
-    let allEvents = [];
-    let riskData = null;
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 12,
-      minZoom: 4,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 12, minZoom: 4 }).addTo(map);
 
     function formatDateTime(iso) {
       const dt = new Date(iso);
-      return Number.isNaN(dt.getTime()) ? iso : dt.toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+      return isNaN(dt.getTime()) ? iso : dt.toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
     }
 
     function hoursAgo(iso) {
-      const dt = new Date(iso);
-      return (Date.now() - dt.getTime()) / 36e5;
-    }
-
-    function stalenessLabel(minutes) {
-      if (minutes <= 60) return ['Fresh', 'fresh'];
-      if (minutes <= 180) return ['Delayed', 'delayed'];
-      return ['Stale', 'stale'];
-    }
-
-    function applyFilters(events) {
-      const type = document.getElementById('type-filter').value;
-      const hours = Number(document.getElementById('time-filter').value);
-      return events.filter((e) => (type === 'all' || e.type === type) && hoursAgo(e.time) <= hours);
+      return (Date.now() - new Date(iso).getTime()) / 36e5;
     }
 
     function renderRiskHeader(risk) {
@@ -268,273 +188,91 @@
       document.getElementById('official-level').textContent = risk.official_threat_level || 'CRITICAL';
       document.getElementById('warning-count').textContent = risk.warnings;
       document.getElementById('last-updated').textContent = `Last updated: ${formatDateTime(risk.updated_at)}`;
-      document.getElementById('freshness').textContent = `Data freshness: ${risk.data_staleness_minutes} min`;
-      document.getElementById('sources-checked').textContent = `Sources checked: ${risk.source_count}`;
-
-      const stalenessMinutes = (risk.data_staleness_minutes ?? 9999);
-      const [label, cls] = stalenessLabel(stalenessMinutes);
+      
+      const [label, cls] = (risk.data_staleness_minutes <= 60) ? ['Fresh', 'fresh'] : ['Delayed', 'delayed'];
       const stale = document.getElementById('stale-badge');
       stale.textContent = `Status: ${label}`;
       stale.className = `badge pill ${cls}`;
 
       const c = risk.components || {};
-      const summary = `Incident ${c.incident ?? '--'} · Proximity ${c.proximity ?? '--'} · Warning ${c.warning ?? '--'} · Official modifier ${c.official_modifier ?? '--'}`;
-      const summaryLine = document.getElementById('risk-summary-line');
-      if (summaryLine) summaryLine.textContent = summary;
-      renderFallbackWarning(risk);
+      document.getElementById('risk-summary-line').textContent = `Incident ${c.incident ?? '--'} · Proximity ${c.proximity ?? '--'} · Warning ${c.warning ?? '--'} · Official ${c.official_modifier ?? '--'}`;
     }
 
+    function renderIntelligence(updates) {
+      const container = document.getElementById('intelligence-container');
+      if (!container) return;
+      container.innerHTML = '';
+      
+      const factions = ['USA', 'Iran', 'Israel', 'GCC'];
+      factions.forEach(faction => {
+        const countryUpdates = updates.filter(u => u.country === faction).slice(0, 3);
+        const hasAlert = countryUpdates.some(u => u.status_tag === 'ALERT');
+        const hasActive = countryUpdates.some(u => u.status_tag === 'ACTIVE');
+        const statusClass = hasAlert ? 'alert' : (hasActive ? 'active' : 'neutral');
 
-    function renderFallbackWarning(risk) {
-      const warningEl = document.getElementById('fallback-warning');
-      if (!warningEl) return;
-      const status = risk.collector_status || {};
-      const ukmto = status.ukmto || {};
-      const navarea = status.navarea || {};
-      const bothFallback = ukmto.used_fallback === true && navarea.used_fallback === true;
-      const noSources = Number(risk.source_count ?? 0) === 0;
-      warningEl.classList.toggle('hidden', !(noSources || bothFallback));
-    }
+        const card = document.createElement('div');
+        card.className = `intel-card ${statusClass}`;
+        
+        let listHtml = countryUpdates.length > 0 
+          ? countryUpdates.map(u => `
+              <li class="intel-item">
+                <p>${u.summary}</p>
+                <span class="meta">${u.source} · ${hoursAgo(u.time).toFixed(1)}h ago</span>
+              </li>`).join('')
+          : '<li class="intel-item"><p style="color:var(--muted)">No tactical updates.</p></li>';
 
-    function renderCollectors(risk) {
-      const list = document.getElementById('collector-list');
-      list.innerHTML = '';
-      const status = risk.collector_status || {};
-      Object.keys(status).forEach((k) => {
-        const s = status[k];
-        const item = document.createElement('div');
-        item.className = 'item';
-        item.innerHTML = `<strong>${s.source}</strong><p>ok: ${s.ok} · fallback: ${s.used_fallback} · count: ${s.count}<br/>checked: ${formatDateTime(s.checked_at)}${s.error ? `<br/>error: ${s.error}` : ''}</p>`;
-        list.appendChild(item);
-      });
-    }
-
-    function renderComponents(risk){
-      const list = document.getElementById('components-list');
-      if(!list) return;
-      list.innerHTML = '';
-
-      const components = risk.components || {};
-      const orderedKeys = [
-        'incident',
-        'diversity',
-        'proximity',
-        'warning',
-        'air',
-        'official_modifier'
-      ];
-
-      orderedKeys.forEach((key) => {
-        if (!(key in components)) return;
-        const item = document.createElement('div');
-        item.className = 'kv-row';
-
-        const labelMap = {
-          incident: 'Incident Severity',
-          diversity: 'Threat Diversity',
-          proximity: 'Transit-Lane Proximity',
-          warning: 'Warning Pressure',
-          air: 'Air / Signal Activity',
-          official_modifier: 'Official Baseline Modifier'
-        };
-
-        item.innerHTML = `<strong>${labelMap[key] || key}</strong><span class="mono">${components[key]}</span>`;
-        list.appendChild(item);
-      });
-    }
-
-    function renderModelExplanation(risk){
-      const list = document.getElementById('model-explanation');
-      if(!list) return;
-      list.innerHTML = '';
-
-      const explanation = Array.isArray(risk.explanation) ? risk.explanation : [];
-      explanation.forEach((line) => {
-        const li = document.createElement('li');
-        li.textContent = line;
-        list.appendChild(li);
-      });
-
-      if (!explanation.length) {
-        const li = document.createElement('li');
-        li.textContent = 'No model explanation available.';
-        list.appendChild(li);
-      }
-    }
-
-    function renderWhy(risk, events){
-      const list = document.getElementById('why-list');
-      list.innerHTML = '';
-
-      const attacks = events.filter(e => e.type === 'attack').length;
-      const mines = events.filter(e => e.type === 'mine-related').length;
-      const warnings = events.filter(e => e.type === 'warning').length;
-      const advisories = events.filter(e => e.type === 'advisory').length;
-      const diversity = new Set(events.map(e => e.type)).size;
-
-      const reasons = [
-        `${attacks} attack events and ${mines} mine-related events in selected window.`,
-        `${warnings} warnings and ${advisories} advisories contributed to pressure.`,
-        `Official threat baseline remains ${risk.official_threat_level || 'CRITICAL'}.`,
-        `Selected event diversity: ${diversity} threat categories.`
-      ];
-
-      reasons.forEach((r) => {
-        const li = document.createElement('li');
-        li.textContent = r;
-        list.appendChild(li);
+        card.innerHTML = `<h4><span>${faction}</span><div class="status-indicator"></div></h4><ul class="intel-list">${listHtml}</ul>`;
+        container.appendChild(card);
       });
     }
 
     function renderTimeline(events) {
-      const timeline = document.getElementById('timeline-list');
-      timeline.innerHTML = '';
-      events
-        .sort((a, b) => new Date(b.time) - new Date(a.time))
-        .slice(0, 8)
-        .forEach((e) => {
-          const item = document.createElement('div');
-          item.className = 'item';
-
-          const relatedSources = Array.isArray(e.related_sources) && e.related_sources.length
-            ? `<br/>Merged sources: ${e.related_sources.join(', ')}`
-            : '';
-
-          const link = e.source_url
-            ? `<br/><a href="${e.source_url}" target="_blank" rel="noopener noreferrer">Source link</a>`
-            : '';
-
-          item.innerHTML = `
-            <strong>${formatDateTime(e.time)} — ${e.label}</strong>
-            <p>
-              Type: ${e.type} · Source: ${e.source} · Confidence: ${Number(e.confidence).toFixed(2)}
-              ${relatedSources}
-              ${link}
-            </p>
-          `;
-          timeline.appendChild(item);
-        });
-
+      const list = document.getElementById('timeline-list');
+      list.innerHTML = '';
+      events.sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 6).forEach(e => {
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.innerHTML = `<strong>${formatDateTime(e.time)}</strong><p style="margin:4px 0; font-size:0.85rem">${e.label}</p><small style="color:var(--muted)">Type: ${e.type} · Source: ${e.source}</small>`;
+        list.appendChild(item);
+      });
       document.getElementById('incident-count').textContent = events.length;
     }
 
     function renderMarkers(events) {
       eventLayer.clearLayers();
-      const bounds = [];
-      events.forEach((e) => {
-        const mergedSources = Array.isArray(e.related_sources) && e.related_sources.length
-          ? `<br/>Merged sources: ${e.related_sources.join(', ')}`
-          : '';
-
-        const popup = `
-          <strong>${e.label}</strong><br/>
-          Source: ${e.source}
-          ${mergedSources}<br/>
-          Confidence: ${Number(e.confidence).toFixed(2)}<br/>
-          Time: ${formatDateTime(e.time)}
-          ${e.source_url ? `<br/><a href='${e.source_url}' target='_blank' rel='noopener noreferrer'>Raw link</a>` : ''}
-        `;
-
-        L.circleMarker([e.lat, e.lon], {
-          radius: 8,
-          color: '#fff',
-          weight: 1,
-          fillColor: TYPE_COLORS[e.type] || '#fff',
-          fillOpacity: .95
-        }).bindPopup(popup).addTo(eventLayer);
-        bounds.push([e.lat, e.lon]);
+      events.forEach(e => {
+        L.circleMarker([e.lat, e.lon], { radius: 8, color: '#fff', weight: 1, fillColor: TYPE_COLORS[e.type] || '#fff', fillOpacity: .9 }).bindPopup(`<strong>${e.label}</strong><br/>${formatDateTime(e.time)}`).addTo(eventLayer);
       });
-      if (bounds.length) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 8 });
-    }
-
-    function renderAll() {
-      const filtered = applyFilters([...allEvents]);
-      renderTimeline(filtered);
-      renderMarkers(filtered);
-      renderWhy(riskData, filtered);
-    }
-
-    async function fetchLegacySnapshot() {
-      const [legacyEventsRes, legacyRiskRes] = await Promise.all([
-      fetch('../data/events.json', { cache: 'no-store' }),
-      fetch('../data/risk.json', { cache: 'no-store' })
-     ]);
-
-      if (!legacyEventsRes.ok || !legacyRiskRes.ok) {
-        throw new Error('legacy fetch failed');
-      }
-
-      return {
-        events: await legacyEventsRes.json(),
-        risk: await legacyRiskRes.json()
-      };
-    }
-    
-    function useCachedData() {
-      try {
-        const events = JSON.parse(localStorage.getItem('hormuz_events') || '[]');
-        const risk = JSON.parse(localStorage.getItem('hormuz_risk') || '{}');
-        if(Array.isArray(events) && events.length && risk.updated_at){
-          allEvents = events;
-          riskData = risk;
-          renderRiskHeader(riskData);
-          renderCollectors(riskData);
-          renderComponents(riskData);
-          renderModelExplanation(riskData);
-          renderAll();
-          return true;
-        }
-      } catch (_) {}
-      return false;
+      if (events.length) map.fitBounds(L.featureGroup(eventLayer.getLayers().map(l => L.marker(l.getLatLng()))).getBounds(), { padding: [30, 30] });
     }
 
     async function loadDashboardData() {
       try {
-        let events;
-        let risk;
+        const [evRes, riskRes, intelRes] = await Promise.all([
+          fetch(`${API_BASE}/api/events`), fetch(`${API_BASE}/api/risk`), fetch(`${API_BASE}/api/intel`)
+        ]);
+        const events = await evRes.json();
+        const risk = await riskRes.json();
+        const intel = await intelRes.json();
 
-        try {
-          const [eventsRes, riskRes] = await Promise.all([
-            fetch(`${API_BASE}/api/events`, { cache: 'no-store' }),
-            fetch(`${API_BASE}/api/risk`, { cache: 'no-store' })
-          ]);
-
-           if (!eventsRes.ok || !riskRes.ok) {
-            throw new Error('worker fetch failed');
-          }
-
-          events = await eventsRes.json();
-          risk = await riskRes.json();
-        } catch (workerErr) {
-          console.warn('Worker fetch failed, falling back to legacy snapshot', workerErr);
-          const legacy = await fetchLegacySnapshot();
-          events = legacy.events;
-          risk = legacy.risk;
-        }
-
-        allEvents = events;
-        riskData = risk;
-  
-        localStorage.setItem('hormuz_events', JSON.stringify(allEvents));
-        localStorage.setItem('hormuz_risk', JSON.stringify(riskData));
-
-        renderRiskHeader(riskData);
-        renderCollectors(riskData);
-        renderComponents(riskData);
-        renderModelExplanation(riskData);
-        renderAll();
-      } catch (err) {
-        console.error(err);
-        if (!useCachedData()) {
-          document.getElementById('timeline-list').innerHTML =
-            '<div class="item"><strong>Data load error</strong><p>No live data and no cached snapshot available.</p></div>';
-        }
-      }
+        renderRiskHeader(risk);
+        renderIntelligence(intel);
+        renderTimeline(events);
+        renderMarkers(events);
+        
+        // Render Components
+        const compList = document.getElementById('components-list');
+        compList.innerHTML = Object.entries(risk.components || {}).map(([k, v]) => `<div class="kv-row"><strong>${k}</strong><span class="mono">${v}</span></div>`).join('');
+        
+        // Render Collectors
+        const collList = document.getElementById('collector-list');
+        collList.innerHTML = Object.entries(risk.collector_status || {}).map(([k, v]) => `<div class="item"><strong>${v.source}</strong><br/><small>Status: ${v.ok ? 'OK' : 'Error'} · Count: ${v.count}</small></div>`).join('');
+        
+      } catch (err) { console.error("Load failed", err); }
     }
 
-    document.getElementById('type-filter').addEventListener('change', renderAll);
-    document.getElementById('time-filter').addEventListener('change', renderAll);
     loadDashboardData();
+    setInterval(loadDashboardData, 60000); // 1분마다 자동 갱신
   </script>
 </body>
 </html>

@@ -9,19 +9,21 @@ Use this checklist to verify Worker + KV snapshot updates are healthy and visibl
 - Confirm `/api/events` and `/api/risk` return JSON.
 
 
-## 1) Source URL validation
+Use this checklist to verify that scheduled updates are healthy and visible to users.
+
+## 0) Source URL validation
 - Run `python scripts/validate_source_urls.py` and compare configured URLs with final resolved URLs.
 - Confirm the URL opened in browser is the same as collector target (including redirects).
 - Prefer stable listing/text/document endpoints over fragile UI pages when available.
 
-## 2) GitHub Actions health
+## 1) GitHub Actions health
 - Open **Actions** tab in the repository.
 - Select **Update Dashboard Data** workflow.
 - Confirm latest runs are green.
 - Confirm schedule runs every 30 minutes.
 - Confirm failures are not repeating.
 
-## 3) Required workflow step order
+## 2) Required workflow step order
 1. Checkout
 2. Set up Python
 3. Generate JSON (`python scripts/update_data.py`)
@@ -31,7 +33,7 @@ Use this checklist to verify Worker + KV snapshot updates are healthy and visibl
 7. Commit updated JSON
 8. Push changes
 
-## 4) Data file validation
+## 3) Data file validation
 Inspect:
 - `data/events.json`
 - `data/risk.json`
@@ -42,7 +44,7 @@ Confirm:
 - `collector_status` exists and includes UKMTO/NAVAREA status.
 - `components` and `explanation` exist.
 
-## 5) Fallback detection
+## 4) Fallback detection
 Check fields in `data/risk.json`:
 - `collector_status.ukmto.ok`
 - `collector_status.ukmto.used_fallback`
@@ -53,7 +55,7 @@ Healthy target:
 - `ok: true`
 - `used_fallback: false`
 
-## 6) UI consistency
+## 5) UI consistency
 Verify deployed UI values match repository JSON:
 - Last updated
 - Data freshness
@@ -61,14 +63,14 @@ Verify deployed UI values match repository JSON:
 - Timeline
 - Collector Health
 
-## 7) Minimum pass criteria
+## 6) Minimum pass criteria
 - Workflow success
 - `data/events.json` updated
 - `data/risk.json` updated
 - Dashboard shows latest values
 
 
-## 8) Alternative collector runtime
+## 7) Alternative collector runtime
 If GitHub Actions egress is blocked (for example repeated 403/Tunnel errors), run collectors in a separate environment:
 - Cloudflare Worker cron
 - Render/Railway scheduled job

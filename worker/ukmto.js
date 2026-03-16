@@ -16,17 +16,16 @@ export async function collectUkmto() {
       
       const lowerTitle = title.toLowerCase();
       
-      // 🚨 배제 키워드: 주간/월간 보고서, 통계, 단순 요약 기사 무조건 차단
+      // 배제 키워드: 주간/월간 보고서 차단 (유지)
       if (/(weekly|monthly|annual|global|increase|decrease|report|summary|piracy in)/.test(lowerTitle)) continue;
 
-      // 🎯 핵심 타겟: 호르무즈, 이란, 미국, 후티, 미사일, 해상 공격 관련만 허용
-      if (!/(hormuz|iran|us |navy|houthi|red sea|gulf|yemen|strike|missile|drone|attack|explosion|hijack)/.test(lowerTitle)) continue;
+      // 🎯 타겟 키워드 대폭 확장: 군함(warship), 순찰(patrol), 전개(deploy), 나포(seize), 방어(defense) 추가
+      if (!/(hormuz|iran|us |navy|houthi|red sea|gulf|yemen|strike|missile|drone|attack|explosion|hijack|warship|patrol|deploy|seize|defense|military|guard)/.test(lowerTitle)) continue;
 
       let type = "warning";
-      if (lowerTitle.includes("advisory")) type = "advisory";
-      if (/(attack|explosion|strike|missile)/.test(lowerTitle)) type = "attack";
+      if (lowerTitle.includes("advisory") || lowerTitle.includes("patrol") || lowerTitle.includes("deploy")) type = "advisory";
+      if (/(attack|explosion|strike|missile|seize|hijack)/.test(lowerTitle)) type = "attack";
 
-      // 분쟁 해역 좌표 매핑 (호르무즈 해협 주변)
       const lat = 24.5 + (Math.random() * 2);
       const lon = 55.5 + (Math.random() * 2.5);
 

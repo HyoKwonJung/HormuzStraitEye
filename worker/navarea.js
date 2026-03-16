@@ -1,6 +1,5 @@
 import { cleanHtml, fetchText, getErrorString, isoNow, parseDateTime } from "./utils.js";
 
-// 미 중부사령부(CENTCOM) 공식 작전/보도자료 RSS
 const CENTCOM_FEED = "https://www.centcom.mil/MEDIA/PRESS-RELEASES/RSS/";
 
 export async function collectNavarea() {
@@ -17,14 +16,14 @@ export async function collectNavarea() {
       
       const lowerTitle = title.toLowerCase();
       
-      // 중동 해역(호르무즈, 홍해, 아덴만)에서의 교전, 타격, 미사일, 드론 관련 작전만 필터링
-      if (!/(sea|gulf|hormuz|iran|houthi|missile|uav|drone|strike|vessel|ship|navy|destroy|engage)/.test(lowerTitle)) continue;
+      // 🎯 작전 키워드 확장: 병력(force), 사령부(command), 훈련(exercise), 차단(intercept), 지원(assist) 추가
+      if (!/(sea|gulf|hormuz|iran|houthi|missile|uav|drone|strike|vessel|ship|navy|destroy|engage|force|command|exercise|intercept|assist|rescue)/.test(lowerTitle)) continue;
 
       let type = "warning";
-      if (/(strike|destroy|engage|defeat)/.test(lowerTitle)) type = "attack"; // 교전 및 격추는 attack으로 분류
+      if (/(strike|destroy|engage|defeat|intercept)/.test(lowerTitle)) type = "attack";
       if (/(uav|drone|missile)/.test(lowerTitle)) type = "air";
+      if (/(exercise|assist|rescue|visit)/.test(lowerTitle)) type = "advisory";
 
-      // 교전 해역 좌표
       const lat = 24.0 + (Math.random() * 3);
       const lon = 54.0 + (Math.random() * 4);
 
@@ -35,7 +34,7 @@ export async function collectNavarea() {
         label: cleanHtml(title).slice(0, 120),
         source: "US CENTCOM",
         source_url: link.trim(),
-        confidence: 0.99, // 공식 군사 발표이므로 신뢰도 99%
+        confidence: 0.99,
         time: parseDateTime(pubDate, nowIso)
       });
     }

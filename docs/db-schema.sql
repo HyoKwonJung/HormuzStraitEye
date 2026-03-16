@@ -1,0 +1,4 @@
+-- Removed from Public Documentation Scope
+--
+-- This repository no longer includes internal database implementation details
+-- in user-facing materials.

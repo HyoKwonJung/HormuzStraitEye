@@ -3,5 +3,26 @@
   "level": "HIGH",
   "incidents": 4,
   "warnings": 2,
-  "updated_at": "2026-03-16T00:25:44Z"
+  "updated_at": "2026-03-16T00:37:04Z",
+  "official_threat_level": "CRITICAL",
+  "source_count": 0,
+  "collector_status": {
+    "ukmto": {
+      "source": "UKMTO",
+      "ok": false,
+      "used_fallback": true,
+      "error": "forced failure",
+      "checked_at": "2026-03-16T00:37:04Z",
+      "count": 1
+    },
+    "navarea": {
+      "source": "NAVAREA IX",
+      "ok": false,
+      "used_fallback": true,
+      "error": "forced failure",
+      "checked_at": "2026-03-16T00:37:04Z",
+      "count": 1
+    }
+  },
+  "data_staleness_minutes": 0
 }

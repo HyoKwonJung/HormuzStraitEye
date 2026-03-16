@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import urllib.request
 from datetime import datetime, timezone
@@ -39,17 +40,13 @@ def parse_ukmto_html(html: str, now: datetime) -> list[dict[str, Any]]:
             continue
 
         coord_match = COORD_PATTERN.search(text)
-        if coord_match:
-            lat = float(coord_match.group("lat"))
-            lon = float(coord_match.group("lon"))
-        else:
-            lat, lon = 26.55, 56.16
+        lat, lon = (float(coord_match.group("lat")), float(coord_match.group("lon"))) if coord_match else (26.55, 56.16)
 
         lowered = text.lower()
-        if "warning" in lowered or "advisory" in lowered:
-            event_type = "advisory"
-        elif "attack" in lowered or "fire" in lowered or "missile" in lowered:
+        if any(k in lowered for k in ("attack", "fire", "missile", "strike")):
             event_type = "attack"
+        elif "advisory" in lowered:
+            event_type = "advisory"
         else:
             event_type = "warning"
 
@@ -60,37 +57,77 @@ def parse_ukmto_html(html: str, now: datetime) -> list[dict[str, Any]]:
                 "type": event_type,
                 "label": text[:120],
                 "source": "UKMTO",
+                "source_url": UKMTO_URL,
                 "confidence": 0.85,
                 "time": _iso_now(now),
             }
         )
-
-    return events[:6]
+    return events[:8]
 
 
 def fallback_ukmto_events(now: datetime) -> list[dict[str, Any]]:
-    return [
-        {
-            "lat": 26.55,
-            "lon": 56.16,
-            "type": "attack",
-            "label": "UKMTO: Security incident causing fire near transit lane",
+    return [{
+        "lat": 26.55,
+        "lon": 56.16,
+        "type": "attack",
+        "label": "UKMTO fallback: Security incident causing fire near transit lane",
+        "source": "UKMTO",
+        "source_url": UKMTO_URL,
+        "confidence": 0.88,
+        "time": _iso_now(now),
+    }]
+
+
+def collect_ukmto_events_with_status(now: datetime, url: str = UKMTO_URL) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if os.getenv("FORCE_UKMTO_FAIL") == "1":
+        return fallback_ukmto_events(now), {
             "source": "UKMTO",
-            "confidence": 0.88,
-            "time": _iso_now(now),
+            "ok": False,
+            "used_fallback": True,
+            "error": "forced failure",
+            "checked_at": _iso_now(now),
+            "count": 1,
         }
-    ]
 
-
-def collect_ukmto_events(now: datetime, url: str = UKMTO_URL) -> list[dict[str, Any]]:
     try:
         html = _fetch(url)
         events = parse_ukmto_html(html, now)
-        return events if events else fallback_ukmto_events(now)
-    except Exception:
-        return fallback_ukmto_events(now)
+        if events:
+            return events, {
+                "source": "UKMTO",
+                "ok": True,
+                "used_fallback": False,
+                "error": None,
+                "checked_at": _iso_now(now),
+                "count": len(events),
+            }
+        fallback = fallback_ukmto_events(now)
+        return fallback, {
+            "source": "UKMTO",
+            "ok": False,
+            "used_fallback": True,
+            "error": "empty parse result",
+            "checked_at": _iso_now(now),
+            "count": len(fallback),
+        }
+    except Exception as exc:
+        fallback = fallback_ukmto_events(now)
+        return fallback, {
+            "source": "UKMTO",
+            "ok": False,
+            "used_fallback": True,
+            "error": str(exc)[:180],
+            "checked_at": _iso_now(now),
+            "count": len(fallback),
+        }
+
+
+def collect_ukmto_events(now: datetime, url: str = UKMTO_URL) -> list[dict[str, Any]]:
+    events, _ = collect_ukmto_events_with_status(now, url=url)
+    return events
 
 
 if __name__ == "__main__":
     now = datetime.now(timezone.utc)
-    print(json.dumps(collect_ukmto_events(now), indent=2))
+    events, status = collect_ukmto_events_with_status(now)
+    print(json.dumps({"status": status, "events": events}, indent=2))

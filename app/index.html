@@ -180,9 +180,9 @@
       <div>
         <h1 class="title">Hormuz Military Dashboard <span style="font-size:0.85rem;color:var(--muted);font-weight:500">Prototype</span></h1>
         <p class="sub">Not just traffic. Operational risk intelligence for Hormuz.</p>
-      </div>
+      </di
       <div class="badges">
-        <span class="badge">Last Updated: 2026-03-15 10:35 UTC</span>
+<
         <span class="badge">Time Window: 24h</span>
         <span class="badge">Confidence: Medium+</span>
       </div>
@@ -191,22 +191,22 @@
     <section class="hero">
       <article class="metric card">
         <h3>Computed Risk Score</h3>
-        <p class="high">74 / HIGH</p>
+        <p class="high" id="risk-score">-- / --</p>
         <small>0-100 weighted index</small>
       </article>
       <article class="metric card">
         <h3>Official Threat Level</h3>
-        <p class="critical">CRITICAL</p>
-        <small>JMIC advisory baseline</small>
+        <p class="critical" id="risk-level">--</p>
+        <small>Official baseline</small>
       </article>
       <article class="metric card">
         <h3>Incidents (24h)</h3>
-        <p>6</p>
+        <p id="incident-count">--</p>
         <small>Confirmed + probable events</small>
       </article>
       <article class="metric card">
         <h3>Warnings in Force</h3>
-        <p>9</p>
+        <p id="warning-count">--</p>
         <small>NAVAREA / UKMTO / MARAD</small>
       </article>
     </section>
@@ -214,27 +214,22 @@
     <section class="grid">
       <article class="card">
         <h2 style="margin-top:0">Live Operational Map</h2>
-        <p class="sub">This map now uses real map tiles (Leaflet + OpenStreetMap) with sample incident overlays.</p>
+        <p class="sub">This map uses JSON-driven events rendered as map overlays.</p>
         <div class="map-shell" aria-label="Hormuz operational map">
           <div id="map"></div>
           <div class="legend">
             <strong>Legend</strong>
-            <div><span class="dot" style="background:#ff4d4f"></span>Confirmed attack</div>
-            <div><span class="dot" style="background:#f7b955"></span>High-risk warning</div>
-            <div><span class="dot" style="background:#55a4f7"></span>Official advisory</div>
-            <div><span class="dot" style="background:#ba68ff"></span>Air activity signal</div>
+            <div><span class="dot" style="background:#ff4d4f"></span>Attack</div>
+            <div><span class="dot" style="background:#f7b955"></span>Warning</div>
+            <div><span class="dot" style="background:#55a4f7"></span>Advisory</div>
+            <div><span class="dot" style="background:#ba68ff"></span>Air activity</div>
           </div>
         </div>
       </article>
 
       <article class="card">
         <h2 style="margin-top:0">Timeline (24h)</h2>
-        <div class="list">
-          <div class="item"><strong>10:35 UTC — Security incident causing fire</strong><p>Near northbound transit lane · Source: UKMTO · Confidence: 0.88</p></div>
-          <div class="item"><strong>08:10 UTC — NAVAREA IX warning issued</strong><p>Chokepoint proximity alert · Source: NAVAREA IX · Confidence: 0.93</p></div>
-          <div class="item"><strong>05:50 UTC — JMIC advisory update posted</strong><p>Regional threat remains CRITICAL · Source: JMIC · Confidence: 0.99</p></div>
-          <div class="item"><strong>01:20 UTC — Commercial vessel strike reported</strong><p>Projectile impact suspected · Source: MARAD + media · Confidence: 0.81</p></div>
-        </div>
+        <div class="list" id="timeline-list"></div>
       </article>
     </section>
 
@@ -255,8 +250,8 @@
         <ul style="margin:0; padding-left:18px; color:var(--muted); line-height:1.7">
           <li>Three high-severity events in the last 24 hours increased the Incident Severity component.</li>
           <li>Two new NAVAREA warnings raised the Official Warning component.</li>
-          <li>The official regional maritime threat level remains CRITICAL.</li>
-          <li>Recent events moved closer to the transit lanes, worsening the Proximity component.</li>
+          <li>The official regional maritime threat level remains elevated.</li>
+          <li>Recent events moved closer to transit lanes, worsening the Proximity component.</li>
         </ul>
       </article>
     </section>
@@ -268,6 +263,13 @@
     crossorigin=""
   ></script>
   <script>
+    const TYPE_COLORS = {
+      attack: '#ff4d4f',
+      warning: '#f7b955',
+      advisory: '#55a4f7',
+      air: '#ba68ff'
+    };
+
     const map = L.map('map', {
       zoomControl: true,
       attributionControl: true
@@ -279,44 +281,97 @@
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    const lanePath = [
+    L.polyline([
       [26.1, 56.9],
       [26.4, 56.5],
       [26.8, 56.1],
       [27.1, 55.7]
-    ];
-
-    L.polyline(lanePath, {
+    ], {
       color: '#9dc1ff',
       weight: 3,
       dashArray: '6 8',
       opacity: 0.8
     }).addTo(map).bindPopup('Major transit lane (sample overlay)');
 
-    L.circle([26.62, 56.2], {
-      radius: 28000,
-      color: '#ff4d4f',
-      fillColor: '#ff4d4f',
-      fillOpacity: 0.18,
-      weight: 1
-    }).addTo(map).bindPopup('High-risk concentration zone');
+    function formatDateTime(isoTime) {
+      const dt = new Date(isoTime);
+      if (Number.isNaN(dt.getTime())) return isoTime;
+      return dt.toISOString().replace('T', ' ').replace(':00.000Z', ' UTC').slice(0, 19) + ' UTC';
+    }
 
-    const points = [
-      { lat: 26.55, lon: 56.16, color: '#ff4d4f', label: 'Confirmed attack' },
-      { lat: 26.73, lon: 56.35, color: '#f7b955', label: 'High-risk warning' },
-      { lat: 26.89, lon: 55.96, color: '#55a4f7', label: 'Official advisory' },
-      { lat: 26.46, lon: 56.55, color: '#ba68ff', label: 'Air activity signal' }
-    ];
+    function updateRiskPanel(risk) {
+      document.getElementById('risk-score').textContent = `${risk.score} / ${risk.level}`;
+      document.getElementById('risk-level').textContent = risk.level;
+      document.getElementById('incident-count').textContent = risk.incidents;
+      document.getElementById('warning-count').textContent = risk.warnings;
+      document.getElementById('last-updated').textContent = `Last Updated: ${formatDateTime(risk.updated_at)}`;
+    }
 
-    points.forEach((p) => {
-      L.circleMarker([p.lat, p.lon], {
-        radius: 8,
-        color: '#ffffff',
-        weight: 1,
-        fillColor: p.color,
-        fillOpacity: 0.95
-      }).addTo(map).bindPopup(p.label);
-    });
+    function renderTimeline(events) {
+      const timeline = document.getElementById('timeline-list');
+      timeline.innerHTML = '';
+      events
+        .slice()
+        .sort((a, b) => new Date(b.time) - new Date(a.time))
+        .slice(0, 6)
+        .forEach((event) => {
+          const card = document.createElement('div');
+          card.className = 'item';
+          const timeText = new Date(event.time).toISOString().slice(11, 16);
+          card.innerHTML = `<strong>${timeText} UTC — ${event.label}</strong><p>Source: ${event.source} · Confidence: ${event.confidence.toFixed(2)} · Type: ${event.type}</p>`;
+          timeline.appendChild(card);
+        });
+    }
+
+    function renderEventMarkers(events) {
+      const bounds = [];
+      events.forEach((event) => {
+        const color = TYPE_COLORS[event.type] || '#ffffff';
+        L.circleMarker([event.lat, event.lon], {
+          radius: 8,
+          color: '#ffffff',
+          weight: 1,
+          fillColor: color,
+          fillOpacity: 0.95
+        }).addTo(map).bindPopup(
+          `<strong>${event.label}</strong><br/>` +
+          `Type: ${event.type}<br/>` +
+          `Source: ${event.source}<br/>` +
+          `Confidence: ${event.confidence.toFixed(2)}<br/>` +
+          `Time: ${formatDateTime(event.time)}`
+        );
+        bounds.push([event.lat, event.lon]);
+      });
+
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [30, 30], maxZoom: 8 });
+      }
+    }
+
+    async function loadDashboardData() {
+      try {
+        const [eventsRes, riskRes] = await Promise.all([
+          fetch('../data/events.json', { cache: 'no-store' }),
+          fetch('../data/risk.json', { cache: 'no-store' })
+        ]);
+
+        if (!eventsRes.ok || !riskRes.ok) {
+          throw new Error('Failed to fetch data files.');
+        }
+
+        const events = await eventsRes.json();
+        const risk = await riskRes.json();
+
+        updateRiskPanel(risk);
+        renderEventMarkers(events);
+        renderTimeline(events);
+      } catch (error) {
+        console.error(error);
+        document.getElementById('timeline-list').innerHTML = '<div class="item"><strong>Data load error</strong><p>Unable to load events.json / risk.json</p></div>';
+      }
+    }
+
+    loadDashboardData();
   </script>
 </body>
 </html>

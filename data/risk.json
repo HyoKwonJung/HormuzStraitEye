@@ -3,7 +3,7 @@
   "level": "HIGH",
   "incidents": 4,
   "warnings": 2,
-  "updated_at": "2026-03-16T00:48:06Z",
+  "updated_at": "2026-03-16T01:23:29Z",
   "components": {
     "incident": 54.39,
     "diversity": 80.0,
@@ -25,16 +25,16 @@
       "source": "UKMTO",
       "ok": false,
       "used_fallback": true,
-      "error": "forced failure",
-      "checked_at": "2026-03-16T00:48:06Z",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>",
+      "checked_at": "2026-03-16T01:23:29Z",
       "count": 1
     },
     "navarea": {
       "source": "NAVAREA IX",
       "ok": false,
       "used_fallback": true,
-      "error": "forced failure",
-      "checked_at": "2026-03-16T00:48:06Z",
+      "error": "<urlopen error Tunnel connection failed: 403 Forbidden>",
+      "checked_at": "2026-03-16T01:23:29Z",
       "count": 1
     }
   },

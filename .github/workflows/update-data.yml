@@ -43,6 +43,9 @@ jobs:
           print('schema validation ok')
           PY
 
+      - name: Run snapshot verification
+        run: python scripts/verify_data_snapshot.py
+
       - name: Simulate collector failures and verify resilience
         run: |
           cp data/events.json /tmp/events_before.json
@@ -56,6 +59,24 @@ jobs:
           assert len(events) > 0
           assert 'collector_status' in risk
           print('resilience check ok')
+          PY
+
+      - name: Write job summary
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          risk = json.loads(Path('data/risk.json').read_text())
+          lines = [
+            '## Dashboard Data Update Summary',
+            f"- updated_at: `{risk.get('updated_at')}`",
+            f"- data_staleness_minutes: `{risk.get('data_staleness_minutes')}`",
+            f"- source_count: `{risk.get('source_count')}`",
+            f"- ukmto ok/fallback: `{risk.get('collector_status',{}).get('ukmto',{}).get('ok')}` / `{risk.get('collector_status',{}).get('ukmto',{}).get('used_fallback')}`",
+            f"- navarea ok/fallback: `{risk.get('collector_status',{}).get('navarea',{}).get('ok')}` / `{risk.get('collector_status',{}).get('navarea',{}).get('used_fallback')}`",
+          ]
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
+            f.write('\n'.join(lines) + '\n')
           PY
 
       - name: Commit updated data files

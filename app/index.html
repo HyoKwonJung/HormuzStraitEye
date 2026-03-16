@@ -232,14 +232,50 @@
 
     function renderTimeline(events) {
       const list = document.getElementById('timeline-list');
+      if (!list) return;
       list.innerHTML = '';
-      events.sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 6).forEach(e => {
+
+      // 최신순으로 8개까지 표시
+      const sortedEvents = [...events].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 8);
+
+      sortedEvents.forEach((e) => {
         const item = document.createElement('div');
         item.className = 'item';
-        item.innerHTML = `<strong>${formatDateTime(e.time)}</strong><p style="margin:4px 0; font-size:0.85rem">${e.label}</p><small style="color:var(--muted)">Type: ${e.type} · Source: ${e.source}</small>`;
+        
+        // 1. 지저분한 UI 텍스트(Filter, About us 등) 제거 로직
+        let cleanLabel = e.label || "Unknown Incident";
+        cleanLabel = cleanLabel.replace(/Filter Home|About us|Recent Incidents|UKMTO Products|Partner Products|Reporting Formats|Best Practices|Contact us|Email: \[email protect/g, "").trim();
+        
+        // 만약 필터링 후 내용이 너무 적으면 기본값 설정
+        if (cleanLabel.length < 5) cleanLabel = "Official Maritime Security Update";
+
+        // 2. 소스별 아이콘/색상 지정
+        const sourceColor = e.source === 'UKMTO' ? '#f7b955' : (e.source === 'NAVAREA IX' ? '#55a4f7' : '#ba68ff');
+
+        // 3. 클릭 가능한 링크 구조 생성
+        const titleHtml = e.source_url 
+          ? `<a href="${e.source_url}" target="_blank" rel="noopener noreferrer" 
+                style="color: var(--text); text-decoration: none; font-weight: 700; display: block; margin-bottom: 4px;"
+                onmouseover="this.style.color='#8ec5ff'" onmouseout="this.style.color='var(--text)'">
+                ${cleanLabel} ↗
+            </a>`
+          : `<strong style="display: block; margin-bottom: 4px;">${cleanLabel}</strong>`;
+
+        item.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <span style="font-size: 0.72rem; color: var(--muted); font-family: monospace;">${formatDateTime(e.time)}</span>
+            <span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); color: ${sourceColor}; border: 1px solid ${sourceColor}44;">${e.source}</span>
+          </div>
+          ${titleHtml}
+          <div style="font-size: 0.78rem; color: var(--muted);">
+            Type: <span style="text-transform: capitalize;">${e.type}</span> · Confidence: ${(e.confidence * 100).toFixed(0)}%
+          </div>
+        `;
         list.appendChild(item);
       });
-      document.getElementById('incident-count').textContent = events.length;
+      
+      const countEl = document.getElementById('incident-count');
+      if (countEl) countEl.textContent = events.length;
     }
 
     function renderMarkers(events) {

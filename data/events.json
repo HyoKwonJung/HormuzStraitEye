@@ -1,0 +1,38 @@
+[
+  {
+    "lat": 26.55,
+    "lon": 56.16,
+    "type": "attack",
+    "label": "UKMTO: Security incident causing fire near transit lane",
+    "source": "UKMTO",
+    "confidence": 0.88,
+    "time": "2026-03-16T00:25:44Z"
+  },
+  {
+    "lat": 26.73,
+    "lon": 56.35,
+    "type": "warning",
+    "label": "NAVAREA IX: New navigation warning issued near chokepoint",
+    "source": "NAVAREA IX",
+    "confidence": 0.93,
+    "time": "2026-03-16T00:25:44Z"
+  },
+  {
+    "lat": 26.89,
+    "lon": 55.96,
+    "type": "advisory",
+    "label": "JMIC regional threat advisory update",
+    "source": "JMIC",
+    "confidence": 0.99,
+    "time": "2026-03-15T19:35:44Z"
+  },
+  {
+    "lat": 26.46,
+    "lon": 56.55,
+    "type": "air",
+    "label": "Unusual patrol orbit signal",
+    "source": "OpenSky",
+    "confidence": 0.72,
+    "time": "2026-03-15T17:10:44Z"
+  }
+]

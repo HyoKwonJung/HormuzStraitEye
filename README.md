@@ -1,69 +1,51 @@
 # Hormuz Strait Eye
 
-Hormuz Strait Eye is a public-facing maritime security dashboard focused on operational risk signals around the Strait of Hormuz.
+Hormuz Military Dashboard is a lightweight OSINT project that monitors security conditions in and around the Strait of Hormuz through a public dashboard. The system combines event collection, deduplication, explainable risk scoring, geospatial visualization, and resilient snapshot serving. It is designed to remain usable even when some collectors fail, making fallback state, freshness, and collector health visible to end users.
 
-## Architecture (Current)
+**Live dashboard:**  
+https://hyokwonjung.github.io/HormuzStraitEye/app/
 
-- **Frontend**: static dashboard on GitHub Pages (`/app`)
-- **Live data API**: Cloudflare Worker (`/api/events`, `/api/risk`)
-- **Snapshot storage**: Cloudflare KV (`DASHBOARD_SNAPSHOTS`)
+## Features
 
-This replaces the previous GitHub Actions-only live collection path, which can fail in some environments due to outbound fetch restrictions.
+- Live-source collection and fallback-resilient snapshots
+- Explainable risk scoring
+- Operational event map and timeline
+- Collector health, freshness, and fallback visibility
 
-## View Dashboard Locally
+## Data Sources
 
-```bash
-cd app
-python3 -m http.server 4173
-```
+- UKMTO
+- NAVAREA IX
+- JMIC
+- OpenSky
 
-Open `http://localhost:4173`.
+## Risk Model
 
-> By default `app/index.html` uses `API_BASE = "https://YOUR-WORKER.workers.dev"`.
-> If this placeholder is unchanged, it falls back to local `../data/*.json` for local preview.
+The risk model is designed to be transparent and operationally interpretable.
+It considers:
+event severity by type
+time decay
+event diversity
+proximity to transit lanes
+warning pressure
+air / signal activity
+official baseline modifier
+The final output includes both:
+a numerical score
+a textual explanation of major drivers
 
-## Configure Frontend API
 
-In `app/index.html` set:
+## Current Limitations
 
-```js
-const API_BASE = "https://YOUR-WORKER.workers.dev";
-```
+NAVAREA collection may still degrade into fallback mode depending on upstream behavior.
+Source reliability can vary based on runtime network conditions and provider restrictions.
+This project is intended as an OSINT situational awareness tool, not as an authoritative military command-and-control system.
 
-Then the dashboard fetches:
-- `${API_BASE}/api/events`
-- `${API_BASE}/api/risk`
 
-## Worker Deployment
+## Disclaimer
 
-See full guide: `worker/README.md`
+This dashboard is an OSINT-based public information tool intended for situational awareness, experimentation, and portfolio demonstration. It should not be treated as an official military or shipping authority system.
 
-Quick steps:
 
-```bash
-cd worker
-wrangler login
-wrangler kv namespace create DASHBOARD_SNAPSHOTS
-# put KV id into worker/wrangler.toml
-wrangler deploy
-```
 
-## Collector URL Diagnostics
 
-To validate configured source URLs and final resolved endpoints:
-
-```bash
-python scripts/validate_source_urls.py
-```
-
-Use this before deep parser debugging when 403/redirect/runtime egress issues appear.
-
-## User-Facing Documentation
-
-- `docs/product-blueprint.md`
-- `docs/risk-index-methodology.md`
-- `docs/operations-checklist.md`
-
-## Legacy Python Pipeline
-
-The Python collector/model scripts remain in `scripts/` as legacy/reference and local fallback tooling.

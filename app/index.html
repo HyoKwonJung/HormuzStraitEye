@@ -443,6 +443,22 @@
       renderWhy(riskData, filtered);
     }
 
+    async function fetchLegacySnapshot() {
+      const [legacyEventsRes, legacyRiskRes] = await Promise.all([
+      fetch('../data/events.json', { cache: 'no-store' }),
+      fetch('../data/risk.json', { cache: 'no-store' })
+     ]);
+
+      if (!legacyEventsRes.ok || !legacyRiskRes.ok) {
+        throw new Error('legacy fetch failed');
+      }
+
+      return {
+        events: await legacyEventsRes.json(),
+        risk: await legacyRiskRes.json()
+      };
+    }
+    
     function useCachedData() {
       try {
         const events = JSON.parse(localStorage.getItem('hormuz_events') || '[]');
@@ -463,15 +479,31 @@
 
     async function loadDashboardData() {
       try {
-        const [eventsRes, riskRes] = await Promise.all([
-          fetch('../data/events.json', { cache: 'no-store' }),
-          fetch('../data/risk.json', { cache: 'no-store' })
-        ]);
-        if (!eventsRes.ok || !riskRes.ok) throw new Error('fetch failed');
+        let events;
+        let risk;
 
-        allEvents = await eventsRes.json();
-        riskData = await riskRes.json();
+        try {
+          const [eventsRes, riskRes] = await Promise.all([
+            fetch(`${API_BASE}/api/events`, { cache: 'no-store' }),
+            fetch(`${API_BASE}/api/risk`, { cache: 'no-store' })
+          ]);
 
+           if (!eventsRes.ok || !riskRes.ok) {
+            throw new Error('worker fetch failed');
+          }
+
+          events = await eventsRes.json();
+          risk = await riskRes.json();
+        } catch (workerErr) {
+          console.warn('Worker fetch failed, falling back to legacy snapshot', workerErr);
+          const legacy = await fetchLegacySnapshot();
+          events = legacy.events;
+          risk = legacy.risk;
+        }
+
+        allEvents = events;
+        riskData = risk;
+  
         localStorage.setItem('hormuz_events', JSON.stringify(allEvents));
         localStorage.setItem('hormuz_risk', JSON.stringify(riskData));
 
@@ -483,7 +515,8 @@
       } catch (err) {
         console.error(err);
         if (!useCachedData()) {
-          document.getElementById('timeline-list').innerHTML = '<div class="item"><strong>Data load error</strong><p>No live data and no cached snapshot available.</p></div>';
+          document.getElementById('timeline-list').innerHTML =
+            '<div class="item"><strong>Data load error</strong><p>No live data and no cached snapshot available.</p></div>';
         }
       }
     }

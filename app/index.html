@@ -209,8 +209,6 @@
     crossorigin=""
   ></script>
   <script>
-    const API_BASE = "https://YOUR-WORKER.workers.dev";
-
     const TYPE_COLORS = {
       attack: '#ff4d4f',
       warning: '#f7b955',
@@ -461,36 +459,16 @@
       return false;
     }
 
-    async function fetchLegacySnapshot() {
-      const [legacyEventsRes, legacyRiskRes] = await Promise.all([
-        fetch('../data/events.json', { cache: 'no-store' }),
-        fetch('../data/risk.json', { cache: 'no-store' })
-      ]);
-      if (!legacyEventsRes.ok || !legacyRiskRes.ok) throw new Error('legacy fetch failed');
-      return {
-        events: await legacyEventsRes.json(),
-        risk: await legacyRiskRes.json(),
-      };
-    }
-
     async function loadDashboardData() {
       try {
         const [eventsRes, riskRes] = await Promise.all([
-          fetch(`${API_BASE}/api/events`, { cache: 'no-store' }),
-          fetch(`${API_BASE}/api/risk`, { cache: 'no-store' })
+          fetch('../data/events.json', { cache: 'no-store' }),
+          fetch('../data/risk.json', { cache: 'no-store' })
         ]);
-        if (!eventsRes.ok || !riskRes.ok) {
-          if (API_BASE.includes('YOUR-WORKER')) {
-            const legacy = await fetchLegacySnapshot();
-            allEvents = legacy.events;
-            riskData = legacy.risk;
-          } else {
-            throw new Error('fetch failed');
-          }
-        } else {
-          allEvents = await eventsRes.json();
-          riskData = await riskRes.json();
-        }
+        if (!eventsRes.ok || !riskRes.ok) throw new Error('fetch failed');
+
+        allEvents = await eventsRes.json();
+        riskData = await riskRes.json();
 
         localStorage.setItem('hormuz_events', JSON.stringify(allEvents));
         localStorage.setItem('hormuz_risk', JSON.stringify(riskData));
@@ -502,19 +480,6 @@
         renderAll();
       } catch (err) {
         console.error(err);
-        if (API_BASE.includes('YOUR-WORKER')) {
-          try {
-            const legacy = await fetchLegacySnapshot();
-            allEvents = legacy.events;
-            riskData = legacy.risk;
-            renderRiskHeader(riskData);
-            renderCollectors(riskData);
-            renderComponents(riskData);
-            renderModelExplanation(riskData);
-            renderAll();
-            return;
-          } catch (_) {}
-        }
         if (!useCachedData()) {
           document.getElementById('timeline-list').innerHTML = '<div class="item"><strong>Data load error</strong><p>No live data and no cached snapshot available.</p></div>';
         }

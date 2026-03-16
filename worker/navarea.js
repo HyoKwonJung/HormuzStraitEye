@@ -1,6 +1,7 @@
 import { cleanHtml, fetchText, getErrorString, isoNow, parseDateTime } from "./utils.js";
 
-export const NAVAREA_URL = "https://hydro.gov.pk/navarea-warnings";
+// ✅ 죽은 도메인 대신 NGA(미 국가지리정보국) 글로벌 항행 경보 포털로 교체
+export const NAVAREA_URL = "https://msi.nga.mil/NavWarnings";
 
 const COORD_RE = /(?<lat>\d{1,2}(?:\.\d+)?)\s*[Nn][,\s]+(?<lon>\d{1,3}(?:\.\d+)?)\s*[Ee]/;
 

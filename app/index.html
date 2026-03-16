@@ -235,31 +235,33 @@
       if (!list) return;
       list.innerHTML = '';
 
-      // 최신순으로 8개까지 표시
       const sortedEvents = [...events].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 8);
 
       sortedEvents.forEach((e) => {
         const item = document.createElement('div');
         item.className = 'item';
         
-        // 1. 지저분한 UI 텍스트(Filter, About us 등) 제거 로직
-        let cleanLabel = e.label || "Unknown Incident";
-        cleanLabel = cleanLabel.replace(/Filter Home|About us|Recent Incidents|UKMTO Products|Partner Products|Reporting Formats|Best Practices|Contact us|Email: \[email protect/g, "").trim();
+        let cleanLabel = e.label || "";
+        cleanLabel = cleanLabel.replace(/Filter Home|About us|Recent Incidents|UKMTO Products|Partner Products|Reporting Formats|Best Practices|Contact us|Email: \[email protect\]|0 reports/gi, "").trim();
         
-        // 만약 필터링 후 내용이 너무 적으면 기본값 설정
-        if (cleanLabel.length < 5) cleanLabel = "Official Maritime Security Update";
+        if (cleanLabel.length < 10) {
+          if (e.source === 'UKMTO') cleanLabel = `UKMTO Maritime Incident Warning`;
+          else if (e.source === 'NAVAREA IX') cleanLabel = `NAVAREA IX Navigational Hazard Alert`;
+          else cleanLabel = `Regional Maritime Security Update`;
+        }
 
-        // 2. 소스별 아이콘/색상 지정
         const sourceColor = e.source === 'UKMTO' ? '#f7b955' : (e.source === 'NAVAREA IX' ? '#55a4f7' : '#ba68ff');
 
-        // 3. 클릭 가능한 링크 구조 생성
-        const titleHtml = e.source_url 
-          ? `<a href="${e.source_url}" target="_blank" rel="noopener noreferrer" 
+        let titleHtml;
+        if (e.source === 'OpenSky' || !e.source_url) {
+          titleHtml = `<strong style="display: block; margin-bottom: 4px; color: var(--text);">${cleanLabel}</strong>`;
+        } else {
+          titleHtml = `<a href="${e.source_url}" target="_blank" rel="noopener noreferrer" 
                 style="color: var(--text); text-decoration: none; font-weight: 700; display: block; margin-bottom: 4px;"
                 onmouseover="this.style.color='#8ec5ff'" onmouseout="this.style.color='var(--text)'">
                 ${cleanLabel} ↗
-            </a>`
-          : `<strong style="display: block; margin-bottom: 4px;">${cleanLabel}</strong>`;
+            </a>`;
+        }
 
         item.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">

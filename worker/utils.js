@@ -42,28 +42,17 @@ export function cleanHtml(text) {
   return String(text || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-export function parseDateTime(text, nowIso) {
-  const source = String(text || "");
-  const patterns = [
-    /(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?Z?)/,
-    /(\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4}\s+\d{2}:\d{2}\s*UTC)/i,
-    /(\d{1,2}\/\d{1,2}\/\d{4}\s+\d{2}:\d{2})/,
-  ];
-  for (const p of patterns) {
-    const m = source.match(p);
-    if (!m) continue;
-    const raw = m[1].trim();
-    let dt = new Date(raw.replace(" UTC", "Z"));
-    if (!Number.isNaN(dt.getTime())) return dt.toISOString().replace(/\.\d{3}Z$/, "Z");
-
-    const slash = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{2}):(\d{2})$/);
-    if (slash) {
-      const [, d, mo, y, h, mi] = slash;
-      dt = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi)));
-      if (!Number.isNaN(dt.getTime())) return dt.toISOString().replace(/\.\d{3}Z$/, "Z");
-    }
+export function parseDateTime(rawStr, fallbackIso) {
+  if (!rawStr) return fallbackIso;
+  
+  const cleanStr = rawStr.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+  const parsed = new Date(cleanStr);
+  
+  if (!isNaN(parsed.getTime())) {
+    return parsed.toISOString();
   }
-  return nowIso;
+  
+  return fallbackIso;
 }
 
 export function normalizeLabel(text) {

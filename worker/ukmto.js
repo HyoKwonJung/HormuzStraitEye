@@ -1,6 +1,5 @@
 import { cleanHtml, fetchText, getErrorString, isoNow, parseDateTime } from "./utils.js";
 
-// 해양 물류 및 안보 메인 피드 (gCaptain)
 const SHIPPING_FEED = "https://gcaptain.com/feed/";
 
 export async function collectUkmto() {
@@ -8,17 +7,22 @@ export async function collectUkmto() {
   try {
     const xml = await fetchText(SHIPPING_FEED);
     const events = [];
-    const items = xml.split("<item>").slice(1);
+    const items = xml.split(/<item>/i).slice(1);
 
     for (const item of items) {
-      const title = item.match(/<title>(<!\[CDATA\[)?(.+?)(]]>)?<\/title>/)?.[2] || "";
-      const link = item.match(/<link>(.+?)<\/link>/)?.[1] || "";
-      const pubDate = item.match(/<pubDate>(.+?)<\/pubDate>/)?.[1] || nowIso;
+      // 🎯 제목, 링크, 날짜 추출 (CDATA 및 줄바꿈 대응)
+      const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
+      const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/i);
+      const pubDateMatch = item.match(/<pubDate>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/pubDate>/i);
+
+      const title = titleMatch ? titleMatch[1].trim() : "";
+      const link = linkMatch ? linkMatch[1].trim() : "";
+      const pubDateStr = pubDateMatch ? pubDateMatch[1].trim() : "";
+
+      const articleTime = parseDateTime(pubDateStr, nowIso);
       
       const lowerTitle = title.toLowerCase();
       
-      // 🎯 상선 통제 및 봉쇄, 중동 긴장 고조 키워드 대폭 추가
-      // blockade(봉쇄), halt/suspend(중단), restrict(제한), seize(나포), marine(해병/해양), navy(해군)
       if (!/(hormuz|iran|gulf|navy|marine|deploy|blockade|halt|suspend|restrict|transit|traffic|vessel|tanker|seize|hijack|threat|attack|strike)/.test(lowerTitle)) continue;
 
       let type = "warning";
@@ -35,17 +39,18 @@ export async function collectUkmto() {
         type,
         label: cleanHtml(title).slice(0, 120),
         source: "Maritime OSINT",
-        source_url: link.trim(),
+        source_url: link,
         confidence: 0.96,
-        time: parseDateTime(pubDate, nowIso)
+        time: articleTime 
       });
     }
 
     if (events.length === 0) throw new Error("No strategic maritime updates found.");
     
-    // 최대 6개까지 최신순으로 반환
+    const sortedEvents = events.sort((a, b) => b.time.localeCompare(a.time));
+    
     return { 
-      events: events.slice(0, 6), 
+      events: sortedEvents.slice(0, 6), 
       status: { source: "Maritime OSINT", ok: true, used_fallback: false, error: null, checked_at: nowIso, count: events.length } 
     };
 

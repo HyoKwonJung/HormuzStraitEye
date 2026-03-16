@@ -217,8 +217,23 @@
       return isNaN(dt.getTime()) ? iso : dt.toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
     }
 
-    function hoursAgo(iso) {
-      return (Date.now() - new Date(iso).getTime()) / 36e5;
+    function timeAgo(iso) {
+      if (!iso) return "Unknown";
+      const now = new Date();
+      const past = new Date(iso);
+      const diffMs = now - past;
+      
+      // 혹시 서버-클라이언트 시간차로 인해 미래로 찍히면 'Just now' 처리
+      if (diffMs < 0) return "Just now";
+      
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 60) return `${Math.max(1, diffMins)}m ago`;
+      
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `${diffHours}h ago`;
+      
+      const diffDays = Math.floor(diffHours / 24);
+      return `${diffDays}d ago`;
     }
 
     function renderRiskHeader(risk) {
@@ -259,7 +274,7 @@
                     ${u.summary}
                   </a>
                 </p>
-                <span class="meta">${u.source} · ${hoursAgo(u.time).toFixed(1)}h ago</span>
+                <span class="meta">${u.source} · ${timeAgo(u.time)}</span>
               </li>`).join('')
           : '<li class="intel-item"><p style="color:var(--muted)">No tactical updates.</p></li>';
 
